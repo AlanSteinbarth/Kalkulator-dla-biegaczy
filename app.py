@@ -1,4 +1,6 @@
 import streamlit as st
+st.set_page_config(page_title="Porady Treningowe", layout="centered")
+
 import pandas as pd
 import os
 from langfuse.decorators import observe
@@ -9,8 +11,6 @@ from pycaret.regression  import load_model, predict_model
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-
-st.set_page_config(page_title="Porady Treningowe", layout="centered")
 
 #wczytanie zmiennych 
 #load_dotenv()

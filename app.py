@@ -75,19 +75,19 @@ def load_model_spaces():
     obj = client.get_object(Bucket=DO_NAME, Key='stocks/model/huber_model_halfmarathon_time.pkl')
     data = obj['Body'].read()
     
-    # Tworzenie pliku tymczasowego z odpowiednim rozszerzeniem
-    temp = tempfile.NamedTemporaryFile(suffix='.pkl', delete=False)
+    # Tworzymy plik tymczasowy z nazwą kończącą się na .pkl
+    with tempfile.NamedTemporaryFile(prefix='model_', suffix='.pkl', delete=False) as tmp:
+        tmp.write(data)
+        tmp_path = tmp.name
+
     try:
-        temp.write(data)
-        temp.close()  # Zamykamy plik przed użyciem
-        model = load_model(temp.name)
+        model = load_model(tmp_path)
     finally:
-        # Upewniamy się, że plik zostanie usunięty
         try:
-            os.unlink(temp.name)
-        except:
+            os.unlink(tmp_path)
+        except Exception:
             pass
-    
+
     return model
 
 model = load_model_spaces()

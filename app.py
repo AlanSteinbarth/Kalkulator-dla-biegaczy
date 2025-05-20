@@ -10,7 +10,10 @@ from io import BytesIO
 required_env = ['OPENAI_API_KEY', 'DO_SPACES_KEY', 'DO_SPACES_SECRET', 'DO_SPACES_REGION', 'DO_SPACES_NAME']
 missing = [var for var in required_env if var not in os.environ]
 if missing:
-    raise EnvironmentError(f"Brakujące zmienne środowiskowe: {', '.join(missing)}")
+    st.set_page_config(layout="centered")
+    st.title('🏅 Biegowy Prognozator')
+st.error(f"Brakujące zmienne środowiskowe: {', '.join(missing)}. Ustaw je w ustawieniach środowiska aplikacji (App Platform).")
+st.stop()
 
 # Inicjalizacja klienta OpenAI
 openai_client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])

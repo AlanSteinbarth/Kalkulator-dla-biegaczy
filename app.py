@@ -4,26 +4,24 @@ import os
 import boto3
 from io import BytesIO
 from pycaret.regression import load_model, predict_model
-from langfuse import LangfuseClient
+from langfuse import Langfuse  # poprawiony import
 
 # --------------------------------------------------
 # 1. ZAŁADOWANIE ZMIENNYCH ŚRODOWISKOWYCH
 # --------------------------------------------------
 
-# DigitalOcean Spaces (lub AWS S3) – obsługa różnych nazw
+# DigitalOcean Spaces / AWS S3
 DO_KEY = os.getenv('DO_SPACES_KEY', os.getenv('AWS_ACCESS_KEY_ID'))
 DO_SECRET = os.getenv('DO_SPACES_SECRET', os.getenv('AWS_SECRET_ACCESS_KEY'))
 DO_REGION = os.getenv('DO_SPACES_REGION', os.getenv('AWS_REGION'))
 DO_NAME = os.getenv('DO_SPACES_NAME', os.getenv('AWS_S3_BUCKET'))
-# Endpoint DO (gdyby AWS_ENDPOINT_URL_S3 było puste, domyślnie region.digitaloceanspaces.com)
 DO_ENDPOINT = os.getenv('AWS_ENDPOINT_URL_S3', f"https://{DO_REGION}.digitaloceanspaces.com")
 
-# Langfuse – nowa wersja wymaga public_key i secret_key
+# Langfuse – od wersji 2.x potrzebujemy public_key i secret_key
 LF_PUBLIC = os.getenv('LANGFUSE_PUBLIC_KEY')
 LF_SECRET = os.getenv('LANGFUSE_SECRET_KEY')
-LF_HOST = os.getenv('LANGFUSE_HOST', "https://cloud.langfuse.com")  # Domyślnie chmura EU
+LF_HOST = os.getenv('LANGFUSE_HOST', "https://cloud.langfuse.com")  # domyślne dla EU
 
-# Lista brakujących zmiennych
 missing = [
     name for name, val in [
         ('DO_SPACES_KEY or AWS_ACCESS_KEY_ID', DO_KEY),
@@ -38,7 +36,6 @@ missing = [
 st.set_page_config(page_title='Biegowy Prognozator', layout='centered')
 st.title('🏅 Biegowy Prognozator')
 
-# Jeśli cokolwiek brakuje – pokazujemy błąd i zatrzymujemy działanie
 if missing:
     st.error(
         'Brakujące zmienne środowiskowe:\n' +
@@ -48,10 +45,10 @@ if missing:
     st.stop()
 
 # --------------------------------------------------
-# 2. INICJALIZACJA LANGFUSE
+# 2. INICJALIZACJA LANGFUSE (wersja 2.x)
 # --------------------------------------------------
 
-lf = LangfuseClient(
+lf = Langfuse(
     public_key=LF_PUBLIC,
     secret_key=LF_SECRET,
     host=LF_HOST
@@ -135,14 +132,14 @@ if submitted:
     # 6. LOGOWANIE DO LANGFUSE (TRACE + GENERATION)
     # --------------------------------------------------
 
-    # Tworzymy nowy trace o nazwie "predict" z wbudowanym inputem
+    # Tworzymy trace o nazwie "predict", przekazujemy input jako dict
     trace = lf.trace(
         name="predict",
-        input=df_input.to_dict(orient='records')[0]  # pojedynczy rekord jako dict
+        input=df_input.to_dict(orient='records')[0]
     )
 
     try:
-        # 6.1 WŁAŚCIWA PREDYKCJA MODELU
+        # 6.1 PREDYKCJA MODELU
         res = predict_model(model, data=df_input)
         eta_sec = int(res['prediction_label'].iloc[0])
 
@@ -161,7 +158,7 @@ if submitted:
         st.success(f'Przewidywany czas półmaratonu: {to_hms(eta_sec)}')
 
     except Exception as e:
-        # 6.4 W razie błędu – logujemy event ERROR i kończymy trace
+        # 6.4 W razie błędu – logujemy event ERROR, kończymy trace
         trace.event(
             name="predict_error",
             level="ERROR",

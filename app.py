@@ -4,7 +4,7 @@ import os
 from langfuse.decorators import observe
 from langfuse.openai import OpenAI
 #import boto3
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from pycaret.regression  import load_model, predict_model
 import matplotlib.pyplot as plt
 import seaborn as sns

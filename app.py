@@ -71,7 +71,7 @@ def load_model_spaces():
         aws_access_key_id=DO_KEY,
         aws_secret_access_key=DO_SECRET
     )
-    obj = client.get_object(Bucket=DO_NAME, Key='models/huber_model_halfmarathon_time.pkl')
+    obj = client.get_object(Bucket=DO_NAME, Key='model/huber_model_halfmarathon_time.pkl')
     data = obj['Body'].read()
     tmp_path = '/tmp/model.pkl'
     with open(tmp_path, 'wb') as f:

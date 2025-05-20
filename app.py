@@ -6,31 +6,50 @@ from io import BytesIO
 from pycaret.regression import load_model, predict_model
 from langfuse.client import LangfuseClient
 
-# Walidacja zmiennych środowiskowych
-env_required = ['DO_SPACES_KEY', 'DO_SPACES_SECRET', 'DO_SPACES_REGION', 'DO_SPACES_NAME', 'LANGFUSE_API_KEY']
-env_missing = [v for v in env_required if v not in os.environ]
+# Obsługa różnych nazw zmiennych środowiskowych
+DO_KEY = os.getenv('DO_SPACES_KEY', os.getenv('AWS_ACCESS_KEY_ID'))
+DO_SECRET = os.getenv('DO_SPACES_SECRET', os.getenv('AWS_SECRET_ACCESS_KEY'))
+DO_REGION = os.getenv('DO_SPACES_REGION', os.getenv('AWS_REGION'))
+DO_NAME = os.getenv('DO_SPACES_NAME', os.getenv('AWS_S3_BUCKET'))
+DO_ENDPOINT = os.getenv('AWS_ENDPOINT_URL_S3', f"https://{DO_REGION}.digitaloceanspaces.com")
+LF_KEY = os.getenv('LANGFUSE_API_KEY', os.getenv('LANGFUSE_SECRET_KEY'))
+
+# Walidacja obecności zmiennych
+missing = [
+    name for name, val in [
+        ('DO_SPACES_KEY or AWS_ACCESS_KEY_ID', DO_KEY),
+        ('DO_SPACES_SECRET or AWS_SECRET_ACCESS_KEY', DO_SECRET),
+        ('DO_SPACES_REGION or AWS_REGION', DO_REGION),
+        ('DO_SPACES_NAME or AWS_S3_BUCKET', DO_NAME),
+        ('LANGFUSE_API_KEY or LANGFUSE_SECRET_KEY', LF_KEY)
+    ] if not val
+]
 
 st.set_page_config(page_title='Biegowy Prognozator', layout='centered')
 st.title('🏅 Biegowy Prognozator')
-if env_missing:
-    st.error(f"Brakujące zmienne środowiskowe: {', '.join(env_missing)}. Ustaw je w App Platform.")
+
+if missing:
+    st.error(
+        'Brakujące zmienne środowiskowe:\n' + '\n'.join(missing) +
+        '\nUstaw je w App Platform lub dodaj jako AWS_* zgodnie z powyższą listą.'
+    )
     st.stop()
 
 # Inicjalizacja Langfuse
-lf = LangfuseClient(api_key=os.environ['LANGFUSE_API_KEY'])
+lf = LangfuseClient(api_key=LF_KEY)
 
-# Funkcja do pobierania modelu z DigitalOcean Spaces i cache
+# Funkcja pobierająca model z Spaces
 @st.cache_resource
 def load_model_spaces():
     session = boto3.session.Session()
     client = session.client(
         's3',
-        region_name=os.environ['DO_SPACES_REGION'],
-        endpoint_url=f"https://{os.environ['DO_SPACES_REGION']}.digitaloceanspaces.com",
-        aws_access_key_id=os.environ['DO_SPACES_KEY'],
-        aws_secret_access_key=os.environ['DO_SPACES_SECRET']
+        region_name=DO_REGION,
+        endpoint_url=DO_ENDPOINT,
+        aws_access_key_id=DO_KEY,
+        aws_secret_access_key=DO_SECRET
     )
-    data = client.get_object(Bucket=os.environ['DO_SPACES_NAME'], Key='models/huber_model_halfmarathon_time.pkl')['Body'].read()
+    data = client.get_object(Bucket=DO_NAME, Key='models/huber_model_halfmarathon_time.pkl')['Body'].read()
     tmp_path = '/tmp/model.pkl'
     with open(tmp_path, 'wb') as f:
         f.write(data)
@@ -38,14 +57,14 @@ def load_model_spaces():
 
 model = load_model_spaces()
 
-# Format czasu sekund na HH:MM:SS
+# Konwersja czasu
 def to_hms(seconds: int) -> str:
     hrs = seconds // 3600
     mins = (seconds % 3600) // 60
     secs = seconds % 60
     return f"{hrs:02}:{mins:02}:{secs:02}"
 
-# Główna logika UI
+# UI
 st.write('Podaj dane, aby obliczyć przewidywany czas ukończenia półmaratonu:')
 with st.form('input_form'):
     gender = st.radio('Płeć', ['Kobieta', 'Mężczyzna'])
@@ -73,7 +92,7 @@ if submitted:
         'Tempo_5km': [pace_sec],
         'Czas_5km': [time5_sec]
     })
-    # Logowanie i predykcja przez Langfuse
+    # Log i predykcja
     lf.log_start('predict', input=df_input.to_dict(orient='records'))
     try:
         res = predict_model(model, data=df_input)

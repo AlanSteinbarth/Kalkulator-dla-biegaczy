@@ -73,7 +73,8 @@ def load_model_spaces():
     )
     obj = client.get_object(Bucket=DO_NAME, Key='stocks/model/huber_model_halfmarathon_time.pkl')
     data = obj['Body'].read()
-    tmp_path = '/tmp/model.pkl'
+    # Usuwamy rozszerzenie .pkl z nazwy pliku tymczasowego
+    tmp_path = '/tmp/model'
     with open(tmp_path, 'wb') as f:
         f.write(data)
     return load_model(tmp_path)

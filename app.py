@@ -36,10 +36,9 @@ if missing:
     st.stop()
 
 # Inicjalizacja Langfuse
-lf = LangfuseClient(api_key=LF_KEY)
+lf = LangfuseClient(write_key=LF_KEY)
 
 # Funkcja pobierająca model z Spaces
-@st.cache_resource
 def load_model_spaces():
     session = boto3.session.Session()
     client = session.client(

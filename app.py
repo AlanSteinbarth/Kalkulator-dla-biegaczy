@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-
 #wczytanie zmiennych 
 load_dotenv()
 openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])

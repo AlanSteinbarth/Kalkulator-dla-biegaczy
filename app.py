@@ -4,7 +4,7 @@ import os
 import boto3
 from io import BytesIO
 from pycaret.regression import load_model, predict_model
-from langfuse import Langfuse  # poprawiony import
+from langfuse import Langfuse  # Wersja 2.x: importujemy klasę Langfuse
 
 # --------------------------------------------------
 # 1. ZAŁADOWANIE ZMIENNYCH ŚRODOWISKOWYCH
@@ -17,10 +17,10 @@ DO_REGION = os.getenv('DO_SPACES_REGION', os.getenv('AWS_REGION'))
 DO_NAME = os.getenv('DO_SPACES_NAME', os.getenv('AWS_S3_BUCKET'))
 DO_ENDPOINT = os.getenv('AWS_ENDPOINT_URL_S3', f"https://{DO_REGION}.digitaloceanspaces.com")
 
-# Langfuse – od wersji 2.x potrzebujemy public_key i secret_key
+# Langfuse (wersja ≥ 2.60.5): potrzebujemy public_key i secret_key
 LF_PUBLIC = os.getenv('LANGFUSE_PUBLIC_KEY')
 LF_SECRET = os.getenv('LANGFUSE_SECRET_KEY')
-LF_HOST = os.getenv('LANGFUSE_HOST', "https://cloud.langfuse.com")  # domyślne dla EU
+LF_HOST = os.getenv('LANGFUSE_HOST', "https://cloud.langfuse.com")  # domyślny endpoint
 
 missing = [
     name for name, val in [
@@ -40,7 +40,7 @@ if missing:
     st.error(
         'Brakujące zmienne środowiskowe:\n' +
         '\n'.join(missing) +
-        '\n\nUstaw je w App Platform lub dodaj w GitHub Secrets.'
+        '\n\nUstaw je w App Platform lub GitHub Secrets.'
     )
     st.stop()
 
@@ -81,13 +81,10 @@ def load_model_spaces():
 model = load_model_spaces()
 
 # --------------------------------------------------
-# 4. FUNKCJE POMOCNICZE
+# 4. FUNKCJA KONWERTUJĄCA SEKUNDY NA HH:MM:SS
 # --------------------------------------------------
 
 def to_hms(seconds: int) -> str:
-    """
-    Konwertuje czas w sekundach na format HH:MM:SS.
-    """
     hrs = seconds // 3600
     mins = (seconds % 3600) // 60
     secs = seconds % 60
@@ -107,7 +104,7 @@ with st.form('input_form'):
     submitted = st.form_submit_button('Oblicz czas')
 
 if submitted:
-    # 5.1 WALIDACJA FORMULARZA
+    # WALIDACJA FORMULARZA
     if ':' not in pace or ':' not in time5:
         st.error('Tempo i czas muszą być w formacie MM:SS')
         st.stop()
@@ -129,21 +126,21 @@ if submitted:
     })
 
     # --------------------------------------------------
-    # 6. LOGOWANIE DO LANGFUSE (TRACE + GENERATION)
+    # 6. LOGOWANIE DO LANGFUSE: TRACE → GENERATION / EVENT
     # --------------------------------------------------
 
-    # Tworzymy trace o nazwie "predict", przekazujemy input jako dict
+    # Utworzenie głównego trace dla zapytania "predict"
     trace = lf.trace(
         name="predict",
-        input=df_input.to_dict(orient='records')[0]
+        input=df_input.to_dict(orient='records')[0]  # pierwszy (i jedyny) rekord
     )
 
     try:
-        # 6.1 PREDYKCJA MODELU
+        # PREDYKCJA MODELU
         res = predict_model(model, data=df_input)
         eta_sec = int(res['prediction_label'].iloc[0])
 
-        # 6.2 Logujemy wynik jako Generation wewnątrz trace
+        # Zarejestrowanie wyniku jako Generation wewnątrz trace
         gen = trace.generation(
             name="prediction",
             model="huber_model_halfmarathon_time",
@@ -151,19 +148,18 @@ if submitted:
         )
         gen.end(output={'eta_sec': eta_sec})
 
-        # Kończymy trace
+        # Zakończenie trace
         trace.end()
 
-        # 6.3 Wyświetlamy wynik w Streamlit
+        # WYŚWIEtlenie wyniku w Streamlit
         st.success(f'Przewidywany czas półmaratonu: {to_hms(eta_sec)}')
 
     except Exception as e:
-        # 6.4 W razie błędu – logujemy event ERROR, kończymy trace
+        # W razie błędu: logujemy event ERROR, a potem kończymy trace
         trace.event(
             name="predict_error",
             level="ERROR",
             status_message=str(e)
         )
         trace.end()
-
         st.error(f'Błąd predykcji: {e}')

@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import boto3
 from io import BytesIO
+import tempfile
 from pycaret.regression import load_model, predict_model
 from langfuse import Langfuse  # Wersja 2.x: importujemy klasę Langfuse
 
@@ -73,11 +74,14 @@ def load_model_spaces():
     )
     obj = client.get_object(Bucket=DO_NAME, Key='stocks/model/huber_model_halfmarathon_time.pkl')
     data = obj['Body'].read()
-    # Usuwamy rozszerzenie .pkl z nazwy pliku tymczasowego
-    tmp_path = '/tmp/model'
-    with open(tmp_path, 'wb') as f:
-        f.write(data)
-    return load_model(tmp_path)
+    
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp.write(data)
+        tmp_path = tmp.name
+    
+    model = load_model(tmp_path)
+    os.unlink(tmp_path)  # usuń plik tymczasowy po załadowaniu
+    return model
 
 model = load_model_spaces()
 

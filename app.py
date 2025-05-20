@@ -10,9 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-import os, streamlit as st
-st.write("DEBUG: OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
-
+st.set_page_config(page_title="Porady Treningowe", layout="centered")
 
 #wczytanie zmiennych 
 #load_dotenv()

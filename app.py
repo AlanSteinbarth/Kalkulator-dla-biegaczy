@@ -81,16 +81,10 @@ def load_model_spaces():
         tmp_path = tmp.name
 
     try:
-        # Jeśli ścieżka kończy się na .pkl, usuń to rozszerzenie dla load_model
-        if tmp_path.endswith('.pkl'):
-            model_path_for_pycaret = tmp_path[:-4]
-            os.rename(tmp_path, model_path_for_pycaret)
-        else:
-            model_path_for_pycaret = tmp_path
-        model = load_model(model_path_for_pycaret)
+        model = load_model(tmp_path)
     finally:
         try:
-            os.unlink(model_path_for_pycaret)
+            os.unlink(tmp_path)
         except Exception:
             pass
 

@@ -1,191 +1,201 @@
 import streamlit as st
+st.set_page_config(page_title="Kalkulator półmaratonu", layout="wide")
 import pandas as pd
-import os
-import boto3
-from io import BytesIO
-import tempfile
+import datetime
 from pycaret.regression import load_model, predict_model
-from langfuse import Langfuse  # Wersja 2.x: importujemy klasę Langfuse
-import pickle
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+import json
+import plotly.express as px
 
-# --------------------------------------------------
-# 1. ZAŁADOWANIE ZMIENNYCH ŚRODOWISKOWYCH
-# --------------------------------------------------
+load_dotenv()
 
-# DigitalOcean Spaces / AWS S3
-DO_KEY = os.getenv('DO_SPACES_KEY', os.getenv('AWS_ACCESS_KEY_ID'))
-DO_SECRET = os.getenv('DO_SPACES_SECRET', os.getenv('AWS_SECRET_ACCESS_KEY'))
-DO_REGION = os.getenv('DO_SPACES_REGION', os.getenv('AWS_REGION'))
-DO_NAME = os.getenv('DO_SPACES_NAME', os.getenv('AWS_S3_BUCKET'))
-DO_ENDPOINT = os.getenv('AWS_ENDPOINT_URL_S3', f"https://{DO_REGION}.digitaloceanspaces.com")
+# OpenAI setup
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Langfuse (wersja ≥ 2.60.5): potrzebujemy public_key i secret_key
-LF_PUBLIC = os.getenv('LANGFUSE_PUBLIC_KEY')
-LF_SECRET = os.getenv('LANGFUSE_SECRET_KEY')
-LF_HOST = os.getenv('LANGFUSE_HOST', "https://cloud.langfuse.com")  # domyślny endpoint
+def extract_user_data(user_input):
+    prompt = f"""
+    Extract the following information from the user input:
+    - Age (as a number)
+    - Gender (M or K)
+    - 5km pace (as a float number)
+    Return the data in JSON format with keys: 'Wiek', 'Płeć', '5 km Tempo'
+    
+    User input: {user_input}
+    """
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+        )
+        return json.loads(completion.choices[0].message.content)
+    except Exception as e:
+        return None
 
-missing = [
-    name for name, val in [
-        ('DO_SPACES_KEY or AWS_ACCESS_KEY_ID', DO_KEY),
-        ('DO_SPACES_SECRET or AWS_SECRET_ACCESS_KEY', DO_SECRET),
-        ('DO_SPACES_REGION or AWS_REGION', DO_REGION),
-        ('DO_SPACES_NAME or AWS_S3_BUCKET', DO_NAME),
-        ('LANGFUSE_PUBLIC_KEY', LF_PUBLIC),
-        ('LANGFUSE_SECRET_KEY', LF_SECRET)
-    ] if not val
-]
+def calculate_5km_time(tempo):
+    """Convert 5km tempo (min/km) to total seconds for 5km"""
+    minutes_per_km = float(tempo)
+    return minutes_per_km * 5 * 60
 
-st.set_page_config(page_title='Biegowy Prognozator', layout='centered')
-st.title('🏅 Biegowy Prognozator')
+def is_valid_age(age):
+    try:
+        age = int(age)
+        return 10 <= age <= 100
+    except:
+        return False
 
-if missing:
-    st.error(
-        'Brakujące zmienne środowiskowe:\n' +
-        '\n'.join(missing) +
-        '\n\nUstaw je w App Platform lub GitHub Secrets.'
-    )
-    st.stop()
+def is_valid_tempo(tempo):
+    try:
+        tempo = float(tempo)
+        return 3.0 <= tempo <= 10.0
+    except:
+        return False
 
-# --------------------------------------------------
-# 2. INICJALIZACJA LANGFUSE (wersja 2.x)
-# --------------------------------------------------
+# Wczytaj dane referencyjne do wykresów
+@st.cache_data
+def load_reference_data():
+    df = pd.read_csv("df_cleaned.csv")
+    return df
 
-lf = Langfuse(
-    public_key=LF_PUBLIC,
-    secret_key=LF_SECRET,
-    host=LF_HOST
+reference_df = load_reference_data()
+
+st.title("🏃‍♂️ Kalkulator czasu półmaratonu")
+st.markdown("""
+Wprowadź swoje dane, a aplikacja oszacuje Twój czas ukończenia półmaratonu na podstawie wytrenowanego modelu uczenia maszynowego.
+
+*Podaj wiek, płeć oraz tempo na 5km w dowolnej formie tekstowej.*
+""")
+
+if 'user_input' not in st.session_state:
+    st.session_state['user_input'] = "Np.: Mam 28 lat, jestem mężczyzną i biegam 5km w tempie 4.45 min/km"
+
+# --- STYLOWANIE PRZYCISKÓW ---
+st.markdown("""
+    <style>
+    div.stButton > button {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.15);
+        margin-bottom: 0px !important;
+        margin-top: 0px !important;
+        font-weight: 600;
+        font-size: 1.1em;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- POLE TEKSTOWE Z NOWYM PLACEHOLDEREM ---
+user_input = st.text_area(
+    "Przedstaw się i podaj swoje dane (wiek, płeć, tempo na 5km):",
+    st.session_state['user_input'],
+    key="user_input_area",
+    placeholder="Wpisz: Mam 35 lat, jestem kobietą, tempo 5km: 5.10 min/km"
 )
 
-# --------------------------------------------------
-# 3. POBRANIE I ZAŁADOWANIE MODELU Z DO SPACES
-# --------------------------------------------------
+# --- PRZYCISKI BEZPOŚREDNIO POD POLEM TEKSTOWYM ---
+col1, col2 = st.columns([1, 1], gap="small")
+with col1:
+    oblicz = st.button("Oblicz przewidywany czas", use_container_width=True)
+with col2:
+    wyczysc = st.button("Wyczyść dane", use_container_width=True)
 
-# Funkcja do pobierania modelu z DigitalOcean Spaces (lub AWS S3) i wczytywania go do PyCaret
-# Używamy boto3 do komunikacji z S3, a następnie pycaret do wczytania modelu
-def load_model_spaces():
-    """
-    Pobiera plik modelu .pkl z DigitalOcean Spaces, zapisuje go tymczasowo
-    i wczytuje za pomocą pickle.load — bez dopisywania dodatkowego .pkl.
-    """
+if wyczysc:
+    st.session_state['user_input'] = ""
+    st.rerun()
 
-    # 1. Inicjalizacja klienta S3-kompatybilnego (DigitalOcean Spaces)
-    session = boto3.session.Session()
-    client = session.client(
-        's3',
-        region_name=DO_REGION,
-        endpoint_url=DO_ENDPOINT,
-        aws_access_key_id=DO_KEY,
-        aws_secret_access_key=DO_SECRET
-    )
+if oblicz:
+    if not user_input or user_input.strip() == "":
+        st.warning("⚠️ Proszę wprowadzić dane.")
+    else:
+        user_data = extract_user_data(user_input)
+        if user_data is None:
+            st.error("❌ Nie udało się przetworzyć danych. Upewnij się, że podałeś wszystkie wymagane informacje.")
+        else:
+            missing_fields = []
+            required_fields = ['Wiek', 'Płeć', '5 km Tempo']
+            for field in required_fields:
+                if field not in user_data:
+                    missing_fields.append(field)
+            if missing_fields:
+                st.warning(f"⚠️ Brakuje następujących danych: {', '.join(missing_fields)}")
+            else:
+                # Walidacja wieku i tempa
+                if not is_valid_age(user_data['Wiek']):
+                    st.warning("⚠️ Wiek powinien być liczbą z zakresu 10-100 lat.")
+                elif not is_valid_tempo(user_data['5 km Tempo']):
+                    st.warning("⚠️ Tempo na 5km powinno być liczbą z zakresu 3.0-10.0 min/km.")
+                else:
+                    try:
+                        model_path = "huber_model_halfmarathon_time"
+                        model = load_model(model_path)
+                        prediction_data = pd.DataFrame({
+                            'Wiek': [user_data['Wiek']],
+                            'Płeć': [user_data['Płeć']],
+                            '5 km Tempo': [float(user_data['5 km Tempo'])],
+                            '5 km Czas': [calculate_5km_time(user_data['5 km Tempo'])]
+                        })
+                        prediction = predict_model(model, data=prediction_data)
+                        predicted_seconds = round(prediction["prediction_label"].iloc[0], 2)
+                        predicted_time = str(datetime.timedelta(seconds=int(predicted_seconds)))
+                        st.success(f"✅ Przewidywany czas ukończenia półmaratonu: {predicted_time}")
+                        # --- WIZUALIZACJA: rozkład czasów tej samej płci ---
+                        user_gender = user_data['Płeć']
+                        user_age = int(user_data['Wiek'])
+                        df_gender = reference_df[reference_df['Płeć'] == user_gender]
+                        group_count_gender = len(df_gender)
+                        avg_gender = df_gender['Czas'].mean()
+                        fig1 = px.histogram(
+                            df_gender, x='Czas', nbins=40,
+                            title=f"Rozkład czasów ukończenia półmaratonu dla płci: {user_gender}",
+                            labels={"Czas": "Czas ukończenia (sekundy)"},
+                            color_discrete_sequence=['#636EFA'],
+                            width=500, height=500,
+                            hover_data={'Czas':':.0f'}
+                        )
+                        fig1.add_vline(x=predicted_seconds, line_dash="dash", line_color="red",
+                            annotation_text="Twój wynik", annotation_position="top right")
+                        fig1.add_vline(x=avg_gender, line_dash="dot", line_color="green",
+                            annotation_text="Średnia", annotation_position="bottom right")
+                        fig1.update_traces(hovertemplate='Czas: %{x:.0f} sek<br>Liczba osób: %{y}')
+                        fig1.update_layout(xaxis_title="Czas ukończenia (sekundy)", yaxis_title="Liczba uczestników")
+                        st.markdown(f"Twój wynik na tle <b>{group_count_gender}</b> osób tej samej płci.", unsafe_allow_html=True)
+                        st.plotly_chart(fig1)
+                        # --- WIZUALIZACJA: rozkład czasów tego samego wieku (±1 rok) ---
+                        df_age = reference_df[reference_df['Wiek'].between(user_age-1, user_age+1)]
+                        group_count_age = len(df_age)
+                        avg_age = df_age['Czas'].mean()
+                        fig2 = px.histogram(
+                            df_age, x='Czas', nbins=40,
+                            title=f"Rozkład czasów ukończenia półmaratonu dla wieku: {user_age} ±1 rok",
+                            labels={"Czas": "Czas ukończenia (sekundy)"},
+                            color_discrete_sequence=['#00CC96'],
+                            width=500, height=500,
+                            hover_data={'Czas':':.0f'}
+                        )
+                        fig2.add_vline(x=predicted_seconds, line_dash="dash", line_color="red",
+                            annotation_text="Twój wynik", annotation_position="top right")
+                        fig2.add_vline(x=avg_age, line_dash="dot", line_color="green",
+                            annotation_text="Średnia", annotation_position="bottom right")
+                        fig2.update_traces(hovertemplate='Czas: %{x:.0f} sek<br>Liczba osób: %{y}')
+                        fig2.update_layout(xaxis_title="Czas ukończenia (sekundy)", yaxis_title="Liczba uczestników")
+                        st.markdown(f"Twój wynik na tle <b>{group_count_age}</b> osób w tej grupie wiekowej.", unsafe_allow_html=True)
+                        st.plotly_chart(fig2)
+                    except Exception as e:
+                        st.error(f"❌ Wystąpił błąd podczas generowania przewidywania: {str(e)}")
 
-    # 2. Pobranie bajtów pliku z modelu
-    obj = client.get_object(
-        Bucket=DO_NAME,
-        Key='stocks/model/huber_model_halfmarathon_time.pkl'
-    )
-    data = obj['Body'].read()
+# Info z przykładem tylko jeśli nie ma wyniku
+if not (oblicz and user_data and not missing_fields and is_valid_age(user_data['Wiek']) and is_valid_tempo(user_data['5 km Tempo'])):
+    st.info("ℹ️ Przykład: 'Mam 28 lat, jestem mężczyzną i biegam 5km w tempie 4.45 min/km'")
 
-    # 3. Zapis do pliku tymczasowego z suffix='.pkl'
-    with tempfile.NamedTemporaryFile(prefix='model_', suffix='.pkl', delete=False) as tmp:
-        tmp.write(data)
-        tmp_path = tmp.name  # np. '/tmp/model_abcd1234.pkl'
+# --- LEWA ROZWIJANA ZAKŁADKA Z FAQ ---
+with st.sidebar:
+    with st.expander("ℹ️ Jak to działa? (FAQ)", expanded=False):
+        st.markdown("""
+        **Jak działa kalkulator?**  
+        Twój czas półmaratonu jest szacowany na podstawie wieku, płci i tempa na 5km. Model został wytrenowany na rzeczywistych wynikach biegaczy z Wrocławia z lat 2023-2024.  
+        Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez AI (OpenAI GPT-3.5).  
 
-    try:
-        # 4. Wczytanie modelu bezpośrednio przez pickle
-        with open(tmp_path, 'rb') as f:
-            model = pickle.load(f)
-    finally:
-        # 5. Usunięcie pliku tymczasowego
-        try:
-            os.remove(tmp_path)
-        except OSError:
-            pass
-
-    return model
-
-# Wczytanie modelu
-model = load_model_spaces()
-
-# --------------------------------------------------
-# 4. FUNKCJA KONWERTUJĄCA SEKUNDY NA HH:MM:SS
-# --------------------------------------------------
-
-def to_hms(seconds: int) -> str:
-    hrs = seconds // 3600
-    mins = (seconds % 3600) // 60
-    secs = seconds % 60
-    return f"{hrs:02}:{mins:02}:{secs:02}"
-
-# --------------------------------------------------
-# 5. INTERFEJS STREAMLIT
-# --------------------------------------------------
-
-st.write('Podaj dane, aby obliczyć przewidywany czas ukończenia półmaratonu:')
-
-with st.form('input_form'):
-    gender = st.radio('Płeć', ['Kobieta', 'Mężczyzna'])
-    age = st.number_input('Wiek', min_value=0, max_value=120, value=30)
-    pace = st.text_input('Tempo na 5 km (MM:SS)', '06:00')
-    time5 = st.text_input('Czas na 5 km (MM:SS)', '35:00')
-    submitted = st.form_submit_button('Oblicz czas')
-
-if submitted:
-    # WALIDACJA FORMULARZA
-    if ':' not in pace or ':' not in time5:
-        st.error('Tempo i czas muszą być w formacie MM:SS')
-        st.stop()
-    try:
-        p_min, p_sec = map(int, pace.split(':'))
-        t_min, t_sec = map(int, time5.split(':'))
-    except ValueError:
-        st.error('Niepoprawne wartości liczb w polach tempo lub czas.')
-        st.stop()
-
-    pace_sec = p_min * 60 + p_sec
-    time5_sec = t_min * 60 + t_sec
-
-    df_input = pd.DataFrame({
-        'Wiek': [age],
-        'Płeć': [0 if gender == 'Kobieta' else 1],
-        'Tempo_5km': [pace_sec],
-        'Czas_5km': [time5_sec]
-    })
-
-    # --------------------------------------------------
-    # 6. LOGOWANIE DO LANGFUSE: TRACE → GENERATION / EVENT
-    # --------------------------------------------------
-
-    # Utworzenie głównego trace dla zapytania "predict"
-    trace = lf.trace(
-        name="predict",
-        input=df_input.to_dict(orient='records')[0]  # pierwszy (i jedyny) rekord
-    )
-
-    try:
-        # PREDYKCJA MODELU
-        res = predict_model(model, data=df_input)
-        eta_sec = int(res['prediction_label'].iloc[0])
-
-        # Zarejestrowanie wyniku jako Generation wewnątrz trace
-        gen = trace.generation(
-            name="prediction",
-            model="huber_model_halfmarathon_time",
-            input=df_input.to_dict(orient='records')[0]
-        )
-        gen.end(output={'eta_sec': eta_sec})
-
-        # Zakończenie trace
-        trace.end()
-
-        # WYŚWIEtlenie wyniku w Streamlit
-        st.success(f'Przewidywany czas półmaratonu: {to_hms(eta_sec)}')
-
-    except Exception as e:
-        # W razie błędu: logujemy event ERROR, a potem kończymy trace
-        trace.event(
-            name="predict_error",
-            level="ERROR",
-            status_message=str(e)
-        )
-        trace.end()
-        st.error(f'Błąd predykcji: {e}')
+        **Jak interpretować wykresy?**  
+        Na wykresach możesz zobaczyć, jak Twój przewidywany czas wypada na tle innych osób tej samej płci i wieku. Czerwona linia to Twój wynik, zielona linia to średnia w danej grupie.
+        """)

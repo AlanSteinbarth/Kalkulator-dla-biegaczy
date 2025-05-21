@@ -60,42 +60,49 @@ lf = Langfuse(
 # --------------------------------------------------
 
 # Funkcja do pobierania modelu z DigitalOcean Spaces (lub AWS S3) i wczytywania go do PyCaret
+# Używamy boto3 do komunikacji z S3, a następnie pycaret do wczytania modelu
 def load_model_spaces():
     """
-    Pobiera zapisany model PyCaret (.pkl) z DigitalOcean Spaces i zwraca obiekt modelu.
-    Model tymczasowo zapisujemy na dysku /tmp z rozszerzeniem .pkl, a następnie wczytujemy.
+    Pobiera plik modelu .pkl z DigitalOcean Spaces, zapisuje go tymczasowo
+    i wczytuje za pomocą pickle.load — bez dopisywania dodatkowego .pkl.
     """
 
-    # 1. Inicjalizacja połączenia z DigitalOcean Spaces (kompatybilny z AWS S3)
+    # 1. Inicjalizacja klienta S3-kompatybilnego (DigitalOcean Spaces)
     session = boto3.session.Session()
     client = session.client(
         's3',
-        region_name=DO_REGION,           # np. 'fra1'
-        endpoint_url=DO_ENDPOINT,       # np. 'https://fra1.digitaloceanspaces.com'
+        region_name=DO_REGION,
+        endpoint_url=DO_ENDPOINT,
         aws_access_key_id=DO_KEY,
         aws_secret_access_key=DO_SECRET
     )
 
-    # 2. Pobranie pliku z modelu z DO Spaces (ścieżka w bucketcie)
-    obj = client.get_object(Bucket=DO_NAME, Key='stocks/model/huber_model_halfmarathon_time.pkl')
-    data = obj['Body'].read()  # odczytujemy dane modelu jako bajty
+    # 2. Pobranie bajtów pliku z modelu
+    obj = client.get_object(
+        Bucket=DO_NAME,
+        Key='stocks/model/huber_model_halfmarathon_time.pkl'
+    )
+    data = obj['Body'].read()
 
-    # 3. Zapisujemy dane do pliku tymczasowego z rozszerzeniem .pkl
+    # 3. Zapis do pliku tymczasowego z suffix='.pkl'
     with tempfile.NamedTemporaryFile(prefix='model_', suffix='.pkl', delete=False) as tmp:
         tmp.write(data)
-        tmp_path = tmp.name  # ścieżka do pliku np. '/tmp/model_abcd1234.pkl'
+        tmp_path = tmp.name  # np. '/tmp/model_abcd1234.pkl'
 
     try:
-        # 4. Wczytanie modelu przez PyCaret. Dzięki suffix='.pkl' nie zostanie dopisane dodatkowe .pkl.
-        model = load_model(tmp_path)
+        # 4. Wczytanie modelu bezpośrednio przez pickle
+        with open(tmp_path, 'rb') as f:
+            model = pickle.load(f)
     finally:
-        # 5. Usuwamy plik tymczasowy (bezpiecznie, nawet gdyby load_model wyrzuciło wyjątek)
-        if os.path.exists(tmp_path):
+        # 5. Usunięcie pliku tymczasowego
+        try:
             os.remove(tmp_path)
+        except OSError:
+            pass
 
     return model
 
-
+# Wczytanie modelu
 model = load_model_spaces()
 
 # --------------------------------------------------

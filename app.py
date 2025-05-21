@@ -59,42 +59,42 @@ lf = Langfuse(
 # 3. POBRANIE I ZAŁADOWANIE MODELU Z DO SPACES
 # --------------------------------------------------
 
+# Funkcja do pobierania modelu z DigitalOcean Spaces (lub AWS S3) i wczytywania go do PyCaret
 def load_model_spaces():
     """
-    Pobiera plik modelu (huber_model_halfmarathon_time.pkl) z DigitalOcean Spaces
-    i zwraca obiekt modelu załadowany przez pycaret.load_model.
+    Pobiera zapisany model PyCaret (.pkl) z DigitalOcean Spaces i zwraca obiekt modelu.
+    Model tymczasowo zapisujemy na dysku /tmp z rozszerzeniem .pkl, a następnie wczytujemy.
     """
+
+    # 1. Inicjalizacja połączenia z DigitalOcean Spaces (kompatybilny z AWS S3)
     session = boto3.session.Session()
     client = session.client(
         's3',
-        region_name=DO_REGION,
-        endpoint_url=DO_ENDPOINT,
+        region_name=DO_REGION,           # np. 'fra1'
+        endpoint_url=DO_ENDPOINT,       # np. 'https://fra1.digitaloceanspaces.com'
         aws_access_key_id=DO_KEY,
         aws_secret_access_key=DO_SECRET
     )
+
+    # 2. Pobranie pliku z modelu z DO Spaces (ścieżka w bucketcie)
     obj = client.get_object(Bucket=DO_NAME, Key='stocks/model/huber_model_halfmarathon_time.pkl')
-    data = obj['Body'].read()
-    
-    # Tworzymy plik tymczasowy bez suffixu
-    with tempfile.NamedTemporaryFile(prefix='model_', delete=False) as tmp:
+    data = obj['Body'].read()  # odczytujemy dane modelu jako bajty
+
+    # 3. Zapisujemy dane do pliku tymczasowego z rozszerzeniem .pkl
+    with tempfile.NamedTemporaryFile(prefix='model_', suffix='.pkl', delete=False) as tmp:
         tmp.write(data)
-        tmp_path = tmp.name
+        tmp_path = tmp.name  # ścieżka do pliku np. '/tmp/model_abcd1234.pkl'
 
     try:
+        # 4. Wczytanie modelu przez PyCaret. Dzięki suffix='.pkl' nie zostanie dopisane dodatkowe .pkl.
         model = load_model(tmp_path)
     finally:
-        # Zmieniamy nazwę pliku na taką z .pkl
-        model_path_pkl = tmp_path + '.pkl'
-        try:
-            os.rename(tmp_path, model_path_pkl)
-        except Exception:
-            pass
-        try:
-            os.unlink(model_path_pkl)
-        except Exception:
-            pass
+        # 5. Usuwamy plik tymczasowy (bezpiecznie, nawet gdyby load_model wyrzuciło wyjątek)
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
     return model
+
 
 model = load_model_spaces()
 

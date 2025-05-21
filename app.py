@@ -6,6 +6,7 @@ from io import BytesIO
 import tempfile
 from pycaret.regression import load_model, predict_model
 from langfuse import Langfuse  # Wersja 2.x: importujemy klasę Langfuse
+import pickle
 
 # --------------------------------------------------
 # 1. ZAŁADOWANIE ZMIENNYCH ŚRODOWISKOWYCH

@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import json
 import plotly.express as px
+import re
 
 load_dotenv()
 
@@ -21,7 +22,7 @@ def extract_user_data(user_input):
     - Gender (M or K)
     - 5km pace (as a float number)
     Return the data in JSON format with keys: 'Wiek', 'Płeć', '5 km Tempo'
-    
+
     User input: {user_input}
     """
     try:
@@ -30,9 +31,30 @@ def extract_user_data(user_input):
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
         )
-        return json.loads(completion.choices[0].message.content)
+        response = completion.choices[0].message.content
+        data = json.loads(response)
+        # Walidacja odpowiedzi
+        if all(key in data for key in ['Wiek', 'Płeć', '5 km Tempo']):
+            return data
+        else:
+            raise ValueError("Brak wymaganych kluczy w odpowiedzi OpenAI.")
     except Exception as e:
-        return None
+        # Fallback: użycie regex do wyciągnięcia danych
+        try:
+            age_match = re.search(r'(\d{2})\s*lat', user_input)
+            gender_match = re.search(r'(kobieta|mężczyzna)', user_input, re.IGNORECASE)
+            pace_match = re.search(r'(\d{1,2}\.\d{1,2})\s*min/km', user_input)
+
+            age = int(age_match.group(1)) if age_match else None
+            gender = 'K' if gender_match and gender_match.group(1).lower() == 'kobieta' else 'M'
+            pace = float(pace_match.group(1)) if pace_match else None
+
+            if age and gender and pace:
+                return {'Wiek': age, 'Płeć': gender, '5 km Tempo': pace}
+            else:
+                return None
+        except Exception:
+            return None
 
 def calculate_5km_time(tempo):
     """Convert 5km tempo (min/km) to total seconds for 5km"""

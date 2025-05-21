@@ -79,14 +79,16 @@ def load_model_spaces():
     with tempfile.NamedTemporaryFile(prefix='model_', delete=False) as tmp:
         tmp.write(data)
         tmp_path = tmp.name
-    
-    # Zmieniamy nazwę pliku na taką z .pkl
-    model_path_pkl = tmp_path + '.pkl'
-    os.rename(tmp_path, model_path_pkl)
 
     try:
-        model = load_model(model_path_pkl)
+        model = load_model(tmp_path)
     finally:
+        # Zmieniamy nazwę pliku na taką z .pkl
+        model_path_pkl = tmp_path + '.pkl'
+        try:
+            os.rename(tmp_path, model_path_pkl)
+        except Exception:
+            pass
         try:
             os.unlink(model_path_pkl)
         except Exception:

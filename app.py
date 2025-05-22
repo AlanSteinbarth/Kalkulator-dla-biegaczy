@@ -30,7 +30,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def extract_user_data(user_input):
     """
     Ekstrahuje dane użytkownika z tekstu wprowadzonego w dowolnej formie.
-    Wykorzystuje OpenAI GPT-3.5 do analizy tekstu, z fallbackiem do regex.
+    Wykorzystuje OpenAI GPT-4 do analizy tekstu, z fallbackiem do regex.
     
     Args:
         user_input (str): Tekst wprowadzony przez użytkownika
@@ -39,18 +39,28 @@ def extract_user_data(user_input):
         dict: Słownik z danymi użytkownika (wiek, płeć, tempo) lub None w przypadku błędu
     """
     prompt = f"""
-    Extract the following information from the user input:
-    - Age (as a number)
-    - Gender (M or K)
-    - 5km pace (as a float number)
-    Return the data in JSON format with keys: 'Wiek', 'Płeć', '5 km Tempo'
+    Przeanalizuj poniższy tekst i wyodrębnij następujące informacje niezależnie od ich kolejności:
+    1. Wiek osoby (liczba)
+    2. Płeć (zamień na 'M' dla mężczyzny lub 'K' dla kobiety)
+    3. Tempo biegu na 5km (liczba z przecinkiem lub kropką)
 
-    User input: {user_input}
+    Zwróć dane w formacie JSON z kluczami: 'Wiek', 'Płeć', '5 km Tempo'
+    Ignoruj dodatkowe informacje w tekście.
+    
+    Przykłady różnych formatów wejściowych:
+    "Kobieta lat 35, biegam 5.30 min/km"
+    "Tempo mam 6,20, jestem facetem i mam 42 lata"
+    "Mężczyzna, 28 lat, 4:45/km"
+
+    Tekst do przeanalizowania: {user_input}
     """
     try:
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Jesteś asystentem specjalizującym się w analizie danych biegowych. Twoje zadanie to dokładne wyodrębnienie wieku, płci i tempa biegu z tekstu, niezależnie od kolejności i formatu wprowadzania."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0,
         )
         response = completion.choices[0].message.content
@@ -65,7 +75,7 @@ def extract_user_data(user_input):
         try:
             # Rozszerzone wyrażenia regularne
             age_match = re.search(r'(\d{1,3})\s*(?:lat|l)', user_input.lower())
-            gender_match = re.search(r'(?:jestem\s+)?(kobieta|mężczyzna|k\b|m\b)', user_input.lower())
+            gender_match = re.search(r'(?:jestem\s+)?(kobieta|mężczyzna|k\b|m\b|facet)', user_input.lower())
             pace_match = re.search(r'(?:tempo|biegam|czas)?\s*(?:na\s+)?(?:5\s*km\s*)?(?:w\s+)?(\d{1,2}(?:[.,]\d{1,2})?)\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)', user_input.lower())
 
             if age_match:
@@ -293,10 +303,9 @@ if not (oblicz and user_data and not missing_fields and is_valid_age(user_data['
 # --- LEWA ROZWIJANA ZAKŁADKA Z FAQ ---
 with st.sidebar:
     with st.expander("ℹ️ Jak to działa? (FAQ)", expanded=False):
-        st.markdown("""
-        **Jak działa kalkulator?**  
+        st.markdown("""        **Jak działa kalkulator?**  
         Twój czas półmaratonu jest szacowany na podstawie wieku, płci i tempa na 5 km. Model został wytrenowany na rzeczywistych wynikach biegaczy z Maratonu Wrocławskiego z lat 2023-2024.  
-        Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez AI (OpenAI GPT-3.5).  
+        Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez AI (OpenAI GPT-4).
 
         **Jak interpretować wykresy?**  
         Na wykresach możesz zobaczyć, jak Twój przewidywany czas wypada na tle innych osób tej samej płci i wieku. Czerwona linia to Twój wynik, zielona linia to średnia w danej grupie.

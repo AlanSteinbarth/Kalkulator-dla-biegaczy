@@ -7,7 +7,7 @@ Aplikacja webowa stworzona w Streamlit służy do szacowania przewidywanego czas
 Funkcjonalności:
 ----------------
 1. **Wprowadzanie danych** – użytkownik podaje wiek, płeć i tempo na 5km w dowolnej formie tekstowej (np. "Mam 35 lat, jestem kobietą, tempo 5km: 5.10 min/km").
-2. **Ekstrakcja danych AI** – dane są automatycznie rozpoznawane przez model OpenAI GPT-3.5.
+2. **Ekstrakcja danych AI** – dane są automatycznie rozpoznawane przez model OpenAI GPT-4.
 3. **Walidacja danych** – aplikacja sprawdza poprawność wieku (10-100 lat) i tempa (3.0-10.0 min/km).
 4. **Szacowanie czasu** – po kliknięciu "Oblicz przewidywany czas" wyświetlany jest przewidywany czas ukończenia półmaratonu.
 5. **Interaktywne wykresy** – dwa wykresy (Plotly):
@@ -36,4 +36,4 @@ Uruchomienie:
 3. Uruchom aplikację: `streamlit run app.py`
 
 Autor: Alan Steinbarth
-Data: 2025-05-21
+Data: 2025-05-22

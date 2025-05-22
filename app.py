@@ -1,5 +1,11 @@
+# =============================================================================
+# KALKULATOR CZASU PÓŁMARATONU
+# Aplikacja do przewidywania czasu ukończenia półmaratonu na podstawie wieku,
+# płci i tempa na 5km, wykorzystująca model uczenia maszynowego.
+# =============================================================================
+
 import streamlit as st
-st.set_page_config(page_title="Kalkulator półmaratonu", layout="wide")
+st.set_page_config(page_title="Kalkulator dla biegaczy", layout="wide")
 import pandas as pd
 import datetime
 from pycaret.regression import load_model, predict_model
@@ -10,12 +16,28 @@ import json
 import plotly.express as px
 import re
 
-load_dotenv()
+# =============================================================================
+# KONFIGURACJA OPENAI
+# =============================================================================
 
-# OpenAI setup
+load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# =============================================================================
+# FUNKCJE POMOCNICZE
+# =============================================================================
+
 def extract_user_data(user_input):
+    """
+    Ekstrahuje dane użytkownika z tekstu wprowadzonego w dowolnej formie.
+    Wykorzystuje OpenAI GPT-3.5 do analizy tekstu, z fallbackiem do regex.
+    
+    Args:
+        user_input (str): Tekst wprowadzony przez użytkownika
+        
+    Returns:
+        dict: Słownik z danymi użytkownika (wiek, płeć, tempo) lub None w przypadku błędu
+    """
     prompt = f"""
     Extract the following information from the user input:
     - Age (as a number)
@@ -41,27 +63,58 @@ def extract_user_data(user_input):
     except Exception as e:
         # Fallback: użycie regex do wyciągnięcia danych
         try:
-            age_match = re.search(r'(\d{2})\s*lat', user_input)
-            gender_match = re.search(r'(kobieta|mężczyzna)', user_input, re.IGNORECASE)
-            pace_match = re.search(r'(\d{1,2}\.\d{1,2})\s*min/km', user_input)
+            # Rozszerzone wyrażenia regularne
+            age_match = re.search(r'(\d{1,3})\s*(?:lat|l)', user_input.lower())
+            gender_match = re.search(r'(?:jestem\s+)?(kobieta|mężczyzna|k\b|m\b)', user_input.lower())
+            pace_match = re.search(r'(?:tempo|biegam|czas)?\s*(?:na\s+)?(?:5\s*km\s*)?(?:w\s+)?(\d{1,2}(?:[.,]\d{1,2})?)\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)', user_input.lower())
 
-            age = int(age_match.group(1)) if age_match else None
-            gender = 'K' if gender_match and gender_match.group(1).lower() == 'kobieta' else 'M'
-            pace = float(pace_match.group(1)) if pace_match else None
+            if age_match:
+                age = int(age_match.group(1))
+            else:
+                return None
+
+            if gender_match:
+                gender_text = gender_match.group(1).lower()
+                gender = 'K' if gender_text in ['kobieta', 'k'] else 'M'
+            else:
+                return None
+
+            if pace_match:
+                pace = float(pace_match.group(1).replace(',', '.'))
+            else:
+                return None
 
             if age and gender and pace:
                 return {'Wiek': age, 'Płeć': gender, '5 km Tempo': pace}
-            else:
-                return None
-        except Exception:
+
+        except Exception as e:
+            print(f"Debug - Błąd w parsowaniu regex: {str(e)}")
             return None
+    return None
 
 def calculate_5km_time(tempo):
-    """Convert 5km tempo (min/km) to total seconds for 5km"""
+    """
+    Przelicza tempo biegu (min/km) na całkowity czas w sekundach dla dystansu 5km.
+    
+    Args:
+        tempo (float): Tempo biegu w minutach na kilometr
+        
+    Returns:
+        float: Całkowity czas w sekundach
+    """
     minutes_per_km = float(tempo)
     return minutes_per_km * 5 * 60
 
 def is_valid_age(age):
+    """
+    Sprawdza, czy podany wiek jest prawidłowy (10-100 lat).
+    
+    Args:
+        age: Wiek do sprawdzenia
+        
+    Returns:
+        bool: True jeśli wiek jest prawidłowy
+    """
     try:
         age = int(age)
         return 10 <= age <= 100
@@ -69,29 +122,45 @@ def is_valid_age(age):
         return False
 
 def is_valid_tempo(tempo):
+    """
+    Sprawdza, czy podane tempo jest prawidłowe (3.0-10.0 min/km).
+    
+    Args:
+        tempo: Tempo do sprawdzenia
+        
+    Returns:
+        bool: True jeśli tempo jest prawidłowe
+    """
     try:
         tempo = float(tempo)
         return 3.0 <= tempo <= 10.0
     except:
         return False
 
-# Wczytaj dane referencyjne do wykresów
 @st.cache_data
 def load_reference_data():
+    """
+    Wczytuje dane referencyjne z pliku CSV. Wynik jest cachowany przez Streamlit.
+    
+    Returns:
+        DataFrame: Dane referencyjne z czasami biegaczy
+    """
     df = pd.read_csv("df_cleaned.csv")
     return df
 
+# =============================================================================
+# INTERFEJS UŻYTKOWNIKA - GŁÓWNY WIDOK
+# =============================================================================
+
 reference_df = load_reference_data()
 
-st.title("🏃‍♂️ Kalkulator czasu półmaratonu")
+st.title("🏃‍♂️ Kalkulator dla biegaczy 🥇")
 st.markdown("""
 Wprowadź swoje dane, a aplikacja oszacuje Twój czas ukończenia półmaratonu na podstawie wytrenowanego modelu uczenia maszynowego.
-
-*Podaj wiek, płeć oraz tempo na 5km w dowolnej formie tekstowej.*
 """)
 
 if 'user_input' not in st.session_state:
-    st.session_state['user_input'] = "Np.: Mam 28 lat, jestem mężczyzną i biegam 5km w tempie 4.45 min/km"
+    st.session_state['user_input'] = "Np.: Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km"
 
 # --- STYLOWANIE PRZYCISKÓW ---
 st.markdown("""
@@ -167,55 +236,66 @@ if oblicz:
                         df_gender = reference_df[reference_df['Płeć'] == user_gender]
                         group_count_gender = len(df_gender)
                         avg_gender = df_gender['Czas'].mean()
+                        # Konwersja sekund na minuty dla wykresów
+                        df_gender['Czas_minuty'] = df_gender['Czas'] / 60
+                        avg_gender_minutes = avg_gender / 60
+                        predicted_minutes = predicted_seconds / 60
+
+                        # Mapowanie płci na pełne nazwy
+                        gender_display = "Mężczyzna" if user_gender == "M" else "Kobieta"
+                        
                         fig1 = px.histogram(
-                            df_gender, x='Czas', nbins=40,
-                            title=f"Rozkład czasów ukończenia półmaratonu dla płci: {user_gender}",
-                            labels={"Czas": "Czas ukończenia (sekundy)"},
+                            df_gender, x='Czas_minuty', nbins=40,
+                            title=f"Rozkład czasów ukończenia półmaratonu dla płci: {gender_display}",
+                            labels={"Czas_minuty": "Czas ukończenia (minuty)"},
                             color_discrete_sequence=['#636EFA'],
                             width=500, height=500,
-                            hover_data={'Czas':':.0f'}
+                            hover_data={'Czas_minuty':':.1f'}
                         )
-                        fig1.add_vline(x=predicted_seconds, line_dash="dash", line_color="red",
+                        fig1.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
                             annotation_text="Twój wynik", annotation_position="top right")
-                        fig1.add_vline(x=avg_gender, line_dash="dot", line_color="green",
+                        fig1.add_vline(x=avg_gender_minutes, line_dash="dot", line_color="green",
                             annotation_text="Średnia", annotation_position="bottom right")
-                        fig1.update_traces(hovertemplate='Czas: %{x:.0f} sek<br>Liczba osób: %{y}')
-                        fig1.update_layout(xaxis_title="Czas ukończenia (sekundy)", yaxis_title="Liczba uczestników")
-                        st.markdown(f"Twój wynik na tle <b>{group_count_gender}</b> osób tej samej płci.", unsafe_allow_html=True)
+                        fig1.update_traces(hovertemplate='Czas: %{x:.1f} min<br>Liczba osób: %{y}')
+                        fig1.update_layout(xaxis_title="Czas ukończenia (minuty)", yaxis_title="Liczba uczestników")
+                        st.markdown(f"Twój wynik na tle <b>{group_count_gender}</b> osób tej samej płci. 🏆", unsafe_allow_html=True)
                         st.plotly_chart(fig1)
+
                         # --- WIZUALIZACJA: rozkład czasów tego samego wieku (±1 rok) ---
                         df_age = reference_df[reference_df['Wiek'].between(user_age-1, user_age+1)]
+                        df_age['Czas_minuty'] = df_age['Czas'] / 60
                         group_count_age = len(df_age)
-                        avg_age = df_age['Czas'].mean()
+                        avg_age_minutes = df_age['Czas'].mean() / 60
+                        
                         fig2 = px.histogram(
-                            df_age, x='Czas', nbins=40,
+                            df_age, x='Czas_minuty', nbins=40,
                             title=f"Rozkład czasów ukończenia półmaratonu dla wieku: {user_age} ±1 rok",
-                            labels={"Czas": "Czas ukończenia (sekundy)"},
+                            labels={"Czas_minuty": "Czas ukończenia (minuty)"},
                             color_discrete_sequence=['#00CC96'],
                             width=500, height=500,
-                            hover_data={'Czas':':.0f'}
+                            hover_data={'Czas_minuty':':.1f'}
                         )
-                        fig2.add_vline(x=predicted_seconds, line_dash="dash", line_color="red",
+                        fig2.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
                             annotation_text="Twój wynik", annotation_position="top right")
-                        fig2.add_vline(x=avg_age, line_dash="dot", line_color="green",
+                        fig2.add_vline(x=avg_age_minutes, line_dash="dot", line_color="green",
                             annotation_text="Średnia", annotation_position="bottom right")
-                        fig2.update_traces(hovertemplate='Czas: %{x:.0f} sek<br>Liczba osób: %{y}')
-                        fig2.update_layout(xaxis_title="Czas ukończenia (sekundy)", yaxis_title="Liczba uczestników")
-                        st.markdown(f"Twój wynik na tle <b>{group_count_age}</b> osób w tej grupie wiekowej.", unsafe_allow_html=True)
+                        fig2.update_traces(hovertemplate='Czas: %{x:.1f} min<br>Liczba osób: %{y}')
+                        fig2.update_layout(xaxis_title="Czas ukończenia (minuty)", yaxis_title="Liczba uczestników")
+                        st.markdown(f"Twój wynik na tle <b>{group_count_age}</b> osób w tej grupie wiekowej. 🏅", unsafe_allow_html=True)
                         st.plotly_chart(fig2)
                     except Exception as e:
                         st.error(f"❌ Wystąpił błąd podczas generowania przewidywania: {str(e)}")
 
 # Info z przykładem tylko jeśli nie ma wyniku
 if not (oblicz and user_data and not missing_fields and is_valid_age(user_data['Wiek']) and is_valid_tempo(user_data['5 km Tempo'])):
-    st.info("ℹ️ Przykład: 'Mam 28 lat, jestem mężczyzną i biegam 5km w tempie 4.45 min/km'")
+    st.info("ℹ️ Przykład: 'Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km'")
 
 # --- LEWA ROZWIJANA ZAKŁADKA Z FAQ ---
 with st.sidebar:
     with st.expander("ℹ️ Jak to działa? (FAQ)", expanded=False):
         st.markdown("""
         **Jak działa kalkulator?**  
-        Twój czas półmaratonu jest szacowany na podstawie wieku, płci i tempa na 5km. Model został wytrenowany na rzeczywistych wynikach biegaczy z Wrocławia z lat 2023-2024.  
+        Twój czas półmaratonu jest szacowany na podstawie wieku, płci i tempa na 5 km. Model został wytrenowany na rzeczywistych wynikach biegaczy z Maratonu Wrocławskiego z lat 2023-2024.  
         Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez AI (OpenAI GPT-3.5).  
 
         **Jak interpretować wykresy?**  

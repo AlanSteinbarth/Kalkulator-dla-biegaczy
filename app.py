@@ -2,6 +2,10 @@
 # KALKULATOR CZASU PÓŁMARATONU
 # Aplikacja do przewidywania czasu ukończenia półmaratonu na podstawie wieku,
 # płci i tempa na 5km, wykorzystująca model uczenia maszynowego.
+# 
+# Autor: Alan Steinbarth
+# Email: alan.steinbarth@gmail.com
+# GitHub: https://github.com/AlanSteinbarth
 # =============================================================================
 
 import streamlit as st
@@ -61,15 +65,15 @@ def extract_user_data(user_input):
                 {"role": "system", "content": "Jesteś asystentem specjalizującym się w analizie danych biegowych. Twoje zadanie to dokładne wyodrębnienie wieku, płci i tempa biegu z tekstu, niezależnie od kolejności i formatu wprowadzania."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0,
-        )
+            temperature=0,        )
         response = completion.choices[0].message.content
-        data = json.loads(response)
-        # Walidacja odpowiedzi
-        if all(key in data for key in ['Wiek', 'Płeć', '5 km Tempo']):
-            return data
-        else:
-            raise ValueError("Brak wymaganych kluczy w odpowiedzi OpenAI.")
+        if response:
+            data = json.loads(response)
+            # Walidacja odpowiedzi
+            if all(key in data for key in ['Wiek', 'Płeć', '5 km Tempo']):
+                return data
+            else:
+                raise ValueError("Brak wymaganych kluczy w odpowiedzi OpenAI.")
     except Exception as e:
         # Fallback: użycie regex do wyciągnięcia danych
         try:
@@ -293,11 +297,13 @@ if oblicz:
                         fig2.update_layout(xaxis_title="Czas ukończenia (minuty)", yaxis_title="Liczba uczestników")
                         st.markdown(f"Twój wynik na tle <b>{group_count_age}</b> osób w tej grupie wiekowej. 🏅", unsafe_allow_html=True)
                         st.plotly_chart(fig2)
+                        st.session_state['last_result_success'] = True
                     except Exception as e:
+                        st.session_state['last_result_success'] = False
                         st.error(f"❌ Wystąpił błąd podczas generowania przewidywania: {str(e)}")
 
 # Info z przykładem tylko jeśli nie ma wyniku
-if not (oblicz and user_data and not missing_fields and is_valid_age(user_data['Wiek']) and is_valid_tempo(user_data['5 km Tempo'])):
+if not oblicz or not st.session_state.get('last_result_success', False):
     st.info("ℹ️ Przykład: 'Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km'")
 
 # --- LEWA ROZWIJANA ZAKŁADKA Z FAQ ---

@@ -1,6 +1,27 @@
-streamlit>=1.24.0
-pandas>=1.5.0
-plotly>=5.13.0
+# =============================================================================
+# REQUIREMENTS - KALKULATOR DLA BIEGACZY v2.0
+# =============================================================================
+
+# Główne frameworki
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Machine Learning
 pycaret>=3.0.0
-python-dotenv>=1.0.0
+scikit-learn>=1.3.0
+
+# Wizualizacja
+plotly>=5.17.0
+
+# AI/OpenAI
 openai>=1.0.0
+
+# Konfiguracja
+python-dotenv>=1.0.0
+
+# Dodatkowe narzędzia
+joblib>=1.3.0
+
+# Development (opcjonalne dla testów)
+pytest>=7.4.0

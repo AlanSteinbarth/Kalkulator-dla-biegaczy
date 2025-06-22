@@ -1,3 +1,18 @@
+# =============================================================================
+# GITIGNORE - KALKULATOR DLA BIEGACZY
+# =============================================================================
+
+# Secrets i konfiguracja
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets.toml
+
+# Streamlit
+.streamlit/secrets.toml
+
 # Python
 __pycache__/
 *.py[cod]

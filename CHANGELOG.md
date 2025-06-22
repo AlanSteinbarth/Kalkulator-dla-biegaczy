@@ -1,4 +1,37 @@
-# Changelog
+# 📋 Changelog
+
+Wszystkie ważne zmiany w tym projekcie będą dokumentowane w tym pliku.
+
+Format bazuje na [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+a projekt używa [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.0.0] - 2025-06-22
+
+### ✨ Dodane
+- **Modularna architektura**: Przepisano kod na modułową strukturę z `src/utils/`
+- **Testy jednostkowe**: Dodano kompleksowe testy z pytest
+- **CI/CD**: GitHub Actions z automatycznymi testami
+- **Quality tools**: Black, flake8, mypy, pre-commit hooks
+- **Lepsze UI**: Przeprojektowano interfejs użytkownika
+- **Advanced logging**: Dodano profesjonalne logowanie
+- **Caching**: Optymalizacja wydajności z `@st.cache_resource`
+- **Error handling**: Robustna obsługa błędów
+- **Configuration**: Centralna konfiguracja w `config.py`
+- **Type hints**: Dodano type annotations
+- **Dokumentacja**: Znacznie rozszerzone README.md
+
+### 🔧 Zmienione
+- **Walidacja danych**: Przepisano funkcje walidacji
+- **OpenAI integration**: Lepsza obsługa API z fallbackiem
+- **Visualizations**: Ulepszone wykresy Plotly
+- **Session state**: Lepsie zarządzanie stanem aplikacji
+- **Requirements**: Aktualizacja zależności do najnowszych wersji
+
+### 🐛 Naprawione
+- Błędy parsowania danych wejściowych
+- Problemy z cache'owaniem modelu
+- Responsywność na urządzeniach mobilnych
+- Obsługa edge cases w regex
 
 ## [1.1.0] - 2025-05-24
 

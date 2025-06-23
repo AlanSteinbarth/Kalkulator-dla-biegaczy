@@ -59,6 +59,12 @@ except ImportError:    # Zaślepka dla px i figur plotly
         def update_layout(self, *_args, **_kwargs):
             return self
             
+        def update_xaxes(self, *_args, **_kwargs):
+            return self
+            
+        def update_yaxes(self, *_args, **_kwargs):
+            return self
+            
     class PlotlyExpress:
         def __getattr__(self, _name):
             def method(*_args, **_kwargs):
@@ -73,6 +79,171 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Wymuszenie ciemnego motywu
+st.markdown("""
+<style>
+    /* Główne tło aplikacji */
+    .stApp {
+        background-color: #0e1117;
+        color: #fafafa;
+    }
+    
+    /* Tło sidebara */
+    .css-1d391kg {
+        background-color: #262730;
+    }
+    
+    /* Tło głównej zawartości */
+    .main .block-container {
+        background-color: #0e1117;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Stylowanie nagłówków */
+    h1, h2, h3, h4, h5, h6 {
+        color: #fafafa !important;
+    }
+    
+    /* Stylowanie tekstu */
+    p, div, span, li {
+        color: #fafafa !important;
+    }
+    
+    /* Stylowanie inputów */
+    .stTextArea > div > div > textarea {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+        border: 1px solid #4a4a4a !important;
+    }
+    
+    /* Stylowanie przycisków */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+        transition: all 0.3s ease !important;
+        font-weight: 600 !important;
+        font-size: 1.1em !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    /* Stylowanie przycisków w sidebarze */
+    .css-1d391kg .stButton > button {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* Stylowanie metryk */
+    .metric-container {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        padding: 1rem !important;
+        border-radius: 12px !important;
+        margin: 0.5rem 0 !important;
+        border: 1px solid #4a4a4a !important;
+    }
+    
+    /* Stylowanie success box */
+    .success-box {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+        color: #000 !important;
+        padding: 1.5rem !important;
+        border-radius: 15px !important;
+        border: none !important;
+        box-shadow: 0 8px 25px rgba(17, 153, 142, 0.3) !important;
+        margin: 1rem 0 !important;
+    }
+    
+    .success-box h3 {
+        color: #000 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .success-box p {
+        color: #333 !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Stylowanie kart informacyjnych */
+    .stInfo {
+        background-color: #1e3a8a !important;
+        border-left: 4px solid #3b82f6 !important;
+    }
+    
+    .stWarning {
+        background-color: #92400e !important;
+        border-left: 4px solid #f59e0b !important;
+    }
+    
+    .stError {
+        background-color: #991b1b !important;
+        border-left: 4px solid #ef4444 !important;
+    }
+    
+    /* Stylowanie expandera */
+    .streamlit-expanderHeader {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+        border: 1px solid #4a4a4a !important;
+        border-radius: 8px !important;
+    }
+    
+    .streamlit-expanderContent {
+        background-color: #1a1a1a !important;
+        border: 1px solid #4a4a4a !important;
+        border-top: none !important;
+    }
+    
+    /* Stylowanie wykresów Plotly */
+    .js-plotly-plot {
+        background-color: #0e1117 !important;
+    }
+    
+    /* Stylowanie dividerów */
+    hr {
+        border-color: #4a4a4a !important;
+    }
+    
+    /* Stylowanie footera */
+    .footer {
+        background-color: #262730 !important;
+        padding: 1rem !important;
+        border-radius: 8px !important;
+        margin-top: 2rem !important;
+        border: 1px solid #4a4a4a !important;
+    }
+    
+    /* Stylowanie tabeli (jeśli występuje) */
+    .dataframe {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+    }
+    
+    /* Stylowanie spinnera */
+    .stSpinner > div {
+        border-top-color: #667eea !important;
+    }
+    
+    /* Animacje */
+    @keyframes glow {
+        0% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.5); }
+        50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.8); }
+        100% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.5); }
+    }
+    
+    .stButton > button:focus {
+        animation: glow 2s infinite !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Konfiguracja loggera
 logging.basicConfig(
@@ -103,29 +274,104 @@ config = Config()
 client = None
 OPENAI_AVAILABLE = False
 
-try:
-    if config.OPENAI_API_KEY and config.OPENAI_API_KEY.strip():
-        client = OpenAI(api_key=config.OPENAI_API_KEY)
-        OPENAI_AVAILABLE = True
-        logger.info("OpenAI klient zainicjalizowany pomyślnie")
-    else:
-        logger.warning("Brak klucza OpenAI API - funkcje AI będą niedostępne")
-except (ImportError, ValueError, TypeError) as e:
-    logger.error("Błąd inicjalizacji OpenAI: %s", str(e))
-    client = None
-    OPENAI_AVAILABLE = False
+def verify_openai_key(api_key: str) -> tuple[bool, str]:
+    """
+    Weryfikuje klucz OpenAI API poprzez wysłanie testowego zapytania.
+    
+    Args:
+        api_key: Klucz API do weryfikacji
+        
+    Returns:
+        tuple: (czy_klucz_prawidlowy, wiadomosc_o_statusie)
+    """
+    if not api_key or not api_key.strip():
+        return False, "Klucz API jest pusty"
+    
+    if not api_key.startswith("sk-"):
+        return False, "Klucz API ma nieprawidłowy format (powinien zaczynać się od 'sk-')"
+    
+    try:
+        test_client = OpenAI(api_key=api_key)        
+        # Wysyłanie krótkiego testowego zapytania
+        response = test_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "Test"}],
+            max_tokens=1,
+            timeout=10
+        )
+        
+        if response and response.choices:
+            return True, "Klucz API jest prawidłowy i funkcjonalny"
+        else:
+            return False, "Otrzymano nieprawidłową odpowiedź z OpenAI"
+            
+    except (ValueError, TypeError, ConnectionError, TimeoutError) as e:
+        error_msg = str(e)
+        if "authentication" in error_msg.lower() or "unauthorized" in error_msg.lower():
+            return False, "Klucz API jest nieprawidłowy lub wygasł"
+        elif "quota" in error_msg.lower() or "billing" in error_msg.lower():
+            return False, "Problem z rozliczeniami lub przekroczono limit"
+        elif "timeout" in error_msg.lower():
+            return False, "Przekroczono czas oczekiwania na odpowiedź"
+        else:
+            return False, f"Błąd weryfikacji: {error_msg}"
+
+def initialize_openai_client(api_key: str | None = None) -> tuple[bool, str]:
+    """
+    Inicjalizuje klienta OpenAI z podanym kluczem.
+    
+    Args:
+        api_key: Klucz API (opcjonalny, domyślnie z .env)
+        
+    Returns:
+        tuple: (czy_inicjalizacja_udana, wiadomosc_o_statusie)
+    """
+    global client, OPENAI_AVAILABLE
+    
+    # Użyj podanego klucza lub z .env
+    key_to_use = api_key or config.OPENAI_API_KEY
+    
+    if not key_to_use or not key_to_use.strip():
+        client = None
+        OPENAI_AVAILABLE = False
+        return False, "Brak klucza OpenAI API"
+    
+    try:        # Weryfikuj klucz przed inicjalizacją
+        key_is_valid, init_message = verify_openai_key(key_to_use)
+        
+        if key_is_valid:
+            client = OpenAI(api_key=key_to_use)
+            OPENAI_AVAILABLE = True
+            logger.info("OpenAI klient zainicjalizowany pomyślnie")
+            return True, "OpenAI zostało pomyślnie zainicjalizowane"
+        else:
+            client = None
+            OPENAI_AVAILABLE = False
+            logger.warning("Nieprawidłowy klucz OpenAI: %s", init_message)
+            return False, f"Błąd weryfikacji klucza: {init_message}"
+            
+    except (ValueError, TypeError, ImportError) as e:
+        client = None
+        OPENAI_AVAILABLE = False
+        logger.error("Błąd inicjalizacji OpenAI: %s", str(e))
+        return False, f"Błąd inicjalizacji: {str(e)}"
+
+# Początkowa inicjalizacja klienta OpenAI z .env
+initial_success, initial_message = initialize_openai_client()
+if not initial_success:
+    logger.warning("Początkowa inicjalizacja OpenAI nieudana: %s", initial_message)
 
 # =============================================================================
 # FUNKCJE POMOCNICZE
 # =============================================================================
 
 def create_fallback_chart(title, message):
-    """Tworzy prostą alternatywę dla wykresów plotly."""
+    """Tworzy prostą alternatywę dla wykresów plotly z ciemnym motywem."""
     return f"""
-    <div style='border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 10px 0;'>
-        <h4>{title}</h4>
+    <div class='chart-fallback'>
+        <h4>📊 {title}</h4>
         <p>{message}</p>
-        <p><em>💡 Zainstaluj plotly aby zobaczyć wykresy: pip install plotly</em></p>
+        <p><em>💡 Zainstaluj plotly aby zobaczyć interaktywne wykresy: pip install plotly</em></p>
     </div>
     """
 
@@ -463,7 +709,78 @@ def initialize_session_state():
 
 def display_sidebar_content():
     """Wyświetla zawartość sidebara."""
+    global client, OPENAI_AVAILABLE
+    
     with st.sidebar:
+        # Sekcja zarządzania kluczem OpenAI
+        st.markdown("### 🤖 Konfiguracja OpenAI")
+        
+        # Status OpenAI
+        if OPENAI_AVAILABLE:
+            st.success("✅ OpenAI jest aktywne")
+        else:
+            st.warning("⚠️ OpenAI jest nieaktywne")
+        
+        # Sprawdzanie klucza z .env
+        env_key_status = "✅ Znaleziono" if config.OPENAI_API_KEY else "❌ Brak"
+        st.info(f"Klucz z .env: {env_key_status}")
+          # Pole do wprowadzenia klucza
+        with st.expander("🔑 Zarządzanie kluczem API", expanded=not OPENAI_AVAILABLE):
+            st.markdown("**Wprowadź klucz OpenAI API:**")
+            st.markdown("_Klucz nie będzie zapisany lokalnie_")
+            
+            # Input dla klucza
+            user_api_key = st.text_input(
+                "Klucz API",
+                type="password",
+                placeholder="sk-...",
+                help="Twój klucz OpenAI API"
+            )
+            
+            col_verify, col_activate = st.columns(2)
+            
+            with col_verify:
+                if st.button("🔍 Zweryfikuj", use_container_width=True):
+                    if user_api_key:
+                        with st.spinner("Weryfikowanie klucza..."):
+                            key_valid, validation_message = verify_openai_key(user_api_key)
+                            
+                        if key_valid:
+                            st.success(f"✅ {validation_message}")
+                            # Zapisz klucz w session_state dla tej sesji
+                            st.session_state['temp_openai_key'] = user_api_key
+                        else:
+                            st.error(f"❌ {validation_message}")
+                    else:
+                        st.warning("Wprowadź klucz API")
+            
+            with col_activate:
+                if st.button("💾 Aktywuj", use_container_width=True):
+                    if user_api_key:
+                        with st.spinner("Aktywowanie OpenAI..."):
+                            success, message = initialize_openai_client(user_api_key)
+                            
+                        if success:
+                            st.success(f"✅ {message}")
+                            st.session_state['temp_openai_key'] = user_api_key
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {message}")
+                    else:
+                        st.warning("Wprowadź klucz API")
+            
+            # Przycisk do deaktywacji
+            if OPENAI_AVAILABLE:
+                if st.button("🔴 Deaktywuj OpenAI", use_container_width=True):
+                    client = None
+                    OPENAI_AVAILABLE = False
+                    if 'temp_openai_key' in st.session_state:
+                        del st.session_state['temp_openai_key']
+                    st.success("OpenAI zostało deaktywowane")
+                    st.rerun()
+        
+        st.divider()
+        
         # Metryki modelu
         st.markdown("### 📈 Metryki modelu")
         metrics = {
@@ -541,23 +858,60 @@ st.markdown("""
 na podstawie wytrenowanego modelu uczenia maszynowego.
 """)
 
-# Stylowanie
+# Stylowanie - dodatkowe ulepszenia
 st.markdown("""
     <style>
-    div.stButton > button {
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.15);
-        margin-bottom: 0px !important;
-        margin-top: 0px !important;
-        font-weight: 600;
-        font-size: 1.1em;
-    }
-    .success-box {
+    /* Dodatkowe stylowanie dla lepszego wyglądu */
+    .metric-container {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        margin: 1rem 0;
+        border-radius: 12px;
+        margin: 0.5rem 0;
+        border: 1px solid #4a4a4a;
+        box-shadow: 0 4px 15px rgba(30, 60, 114, 0.3);
+    }
+    
+    /* Stylowanie kart z fallback dla wykresów */
+    .chart-fallback {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+        border: 2px dashed #667eea;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin: 10px 0;
+        color: #e2e8f0;
+        box-shadow: 0 4px 15px rgba(45, 55, 72, 0.3);
+    }
+    
+    .chart-fallback h4 {
+        color: #667eea !important;
+        margin-bottom: 10px;
+    }
+    
+    .chart-fallback p {
+        color: #cbd5e0 !important;
+        margin: 5px 0;
+    }
+    
+    .chart-fallback em {
+        color: #90cdf4 !important;
+        font-style: italic;
+    }
+    
+    /* Animacje hover dla kart */
+    .metric-container:hover, .chart-fallback:hover {
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+    
+    /* Lepsze stylowanie dla list */
+    ul, ol {
+        color: #fafafa !important;
+    }
+    
+    li {
+        color: #fafafa !important;
+        margin: 0.5rem 0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -634,8 +988,7 @@ if oblicz:
                             df_gender['Czas_minuty'] = df_gender['Czas'] / 60
                             avg_gender_minutes = df_gender['Czas'].mean() / 60                            
                             gender_display = "Mężczyzn" if user_gender == "M" else "Kobiet"
-                            
-                            # Sprawdzenie dostępności Plotly
+                              # Sprawdzenie dostępności Plotly
                             if PLOTLY_AVAILABLE:
                                 fig1 = px.histogram(
                                     df_gender, 
@@ -643,14 +996,25 @@ if oblicz:
                                     nbins=30,
                                     title=f"Rozkład czasów dla {gender_display.lower()}",
                                     labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
-                                    color_discrete_sequence=['#636EFA']
+                                    color_discrete_sequence=['#667eea']
                                 )
-                                fig1.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
+                                fig1.add_vline(x=predicted_minutes, line_dash="dash", line_color="#ff6b6b",
                                     annotation_text="Twój wynik", annotation_position="top right")
-                                fig1.add_vline(x=avg_gender_minutes, line_dash="dot", line_color="green",
+                                fig1.add_vline(x=avg_gender_minutes, line_dash="dot", line_color="#51cf66",
                                     annotation_text="Średnia", annotation_position="bottom right")
                                 
-                                fig1.update_layout(showlegend=False, height=400)
+                                # Ciemny motyw dla wykresu
+                                fig1.update_layout(
+                                    showlegend=False, 
+                                    height=400,
+                                    plot_bgcolor='rgba(0,0,0,0)',
+                                    paper_bgcolor='rgba(0,0,0,0)',
+                                    font_color='#fafafa',
+                                    title_font_color='#fafafa'
+                                )
+                                fig1.update_xaxes(gridcolor='#4a4a4a', color='#fafafa')
+                                fig1.update_yaxes(gridcolor='#4a4a4a', color='#fafafa')
+                                
                                 st.plotly_chart(fig1, use_container_width=True)
                             else:
                                 # Fallback gdy plotly nie jest dostępny
@@ -667,8 +1031,7 @@ if oblicz:
                         if len(df_age) > 0:
                             df_age['Czas_minuty'] = df_age['Czas'] / 60
                             avg_age_minutes = df_age['Czas'].mean() / 60
-                            
-                            # Sprawdzenie dostępności Plotly
+                              # Sprawdzenie dostępności Plotly
                             if PLOTLY_AVAILABLE:
                                 fig2 = px.histogram(
                                     df_age, 
@@ -676,15 +1039,26 @@ if oblicz:
                                     nbins=30,
                                     title=f"Rozkład czasów dla wieku {user_age}±2 lat",
                                     labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
-                                    color_discrete_sequence=['#00CC96']
+                                    color_discrete_sequence=['#4ecdc4']
                                 )
                                 
-                                fig2.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
+                                fig2.add_vline(x=predicted_minutes, line_dash="dash", line_color="#ff6b6b",
                                     annotation_text="Twój wynik", annotation_position="top right")
-                                fig2.add_vline(x=avg_age_minutes, line_dash="dot", line_color="green",
+                                fig2.add_vline(x=avg_age_minutes, line_dash="dot", line_color="#51cf66",
                                     annotation_text="Średnia", annotation_position="bottom right")
                                 
-                                fig2.update_layout(showlegend=False, height=400)
+                                # Ciemny motyw dla wykresu
+                                fig2.update_layout(
+                                    showlegend=False, 
+                                    height=400,
+                                    plot_bgcolor='rgba(0,0,0,0)',
+                                    paper_bgcolor='rgba(0,0,0,0)',
+                                    font_color='#fafafa',
+                                    title_font_color='#fafafa'
+                                )
+                                fig2.update_xaxes(gridcolor='#4a4a4a', color='#fafafa')
+                                fig2.update_yaxes(gridcolor='#4a4a4a', color='#fafafa')
+                                
                                 st.plotly_chart(fig2, use_container_width=True)
                             else:
                                 # Fallback gdy plotly nie jest dostępny
@@ -707,17 +1081,22 @@ display_sidebar_content()
 if not oblicz or not st.session_state.get('last_result_success', False):
     if OPENAI_AVAILABLE:
         st.info("💡 **Wskazówka:** Możesz pisać w dowolnym stylu - AI rozpozna Twoje dane automatycznie!")
+        st.success("🤖 **OpenAI aktywne** - Inteligentne parsowanie tekstu włączone")
     else:
         st.info("💡 **Wskazówka:** Podaj dane w formacie: wiek, płeć (M/K/mężczyzna/kobieta), tempo (np. 5.30 min/km)")
-        st.warning("⚠️ **Uwaga:** Funkcje AI są niedostępne (brak klucza OpenAI API). Używamy prostego parsowania tekstu.")
+        if config.OPENAI_API_KEY:
+            st.warning("⚠️ **Uwaga:** Błąd inicjalizacji OpenAI. Sprawdź klucz API w sidebarze.")
+        else:
+            st.warning("⚠️ **Uwaga:** Brak klucza OpenAI API. Dodaj klucz w sidebarze lub pliku .env dla funkcji AI.")
     st.info("📝 **Przykład:** 'Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km'")
 
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style='text-align: center; color: #666;'>
-    <p>🏃‍♂️ Kalkulator dla biegaczy v2.0 | Stworzony przez <a href='https://github.com/AlanSteinbarth'>Alan Steinbarth</a></p>
-    <p>Model wytrenowany na danych z Maratonu Wrocławskiego 2023-2024</p>
+<div class='footer' style='text-align: center; background: linear-gradient(135deg, #262730 0%, #1a1a1a 100%); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border: 1px solid #4a4a4a;'>
+    <p style='color: #cbd5e0; font-size: 1.1em; margin-bottom: 0.5rem;'>🏃‍♂️ <strong>Kalkulator dla biegaczy v2.0</strong></p>
+    <p style='color: #90cdf4; margin-bottom: 0.5rem;'>Stworzony przez <a href='https://github.com/AlanSteinbarth' style='color: #667eea; text-decoration: none;'>Alan Steinbarth</a></p>
+    <p style='color: #a0aec0; font-size: 0.9em;'>Model wytrenowany na danych z Maratonu Wrocławskiego 2023-2024</p>
 </div>
 """, unsafe_allow_html=True)
 

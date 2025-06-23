@@ -931,11 +931,18 @@ def display_sidebar_content():
 initialize_session_state()
 reference_df = load_reference_data()
 
-st.title("🏃‍♂️ Kalkulator dla biegaczy 🥇")
+# Wyśrodkowany tytuł z lepszym stylowaniem
 st.markdown("""
-**Wersja 2.0** - Wprowadź swoje dane, a aplikacja oszacuje Twój czas ukończenia półmaratonu 
-na podstawie wytrenowanego modelu uczenia maszynowego.
-""")
+<div style='text-align: center; margin-bottom: 2rem;'>
+    <h1 style='color: #fafafa; font-size: 3em; font-weight: bold; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);'>
+        🏃‍♂️ Kalkulator dla biegaczy 🥇
+    </h1>
+    <p style='color: #cbd5e0; font-size: 1.2em; margin-top: 0;'>
+        <strong>Wersja 2.0</strong> - Wprowadź swoje dane, a aplikacja oszacuje Twój czas ukończenia półmaratonu 
+        na podstawie wytrenowanego modelu uczenia maszynowego.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # Stylowanie - dodatkowe ulepszenia
 st.markdown("""

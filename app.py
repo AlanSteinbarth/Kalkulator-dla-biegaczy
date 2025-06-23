@@ -38,10 +38,10 @@ except ImportError:
         logger.error("PyCaret nie jest dostępny - model %s nie może być załadowany", model_name)
         return None
 
-    def predict_model(estimator, data=None, round=4, verbose=True):  # noqa: ARG001, A002
+    def predict_model(estimator, data=None, round_digits=4, verbose=True):  # noqa  # type: ignore
         """Fallback funkcja gdy PyCaret nie jest dostępny.""" 
         # Parametry zachowane dla kompatybilności z PyCaret API
-        _ = estimator, data, round, verbose  # Jawne oznaczenie nieużywanych parametrów  
+        _ = estimator, data, round_digits, verbose  # Jawne oznaczenie nieużywanych parametrów  
         st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
         logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
         return None

@@ -3,7 +3,7 @@
 # Testy dla funkcji walidacji i przetwarzania danych
 # =============================================================================
 
-import pytest
+import pytest  # type: ignore[import-untyped]
 import sys
 import os
 

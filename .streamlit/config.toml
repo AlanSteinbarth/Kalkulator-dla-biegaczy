@@ -12,10 +12,11 @@ enableXsrfProtection = false
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#FF4B4B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
+# Ciemny motyw (dark mode)
+primaryColor = "#667eea"              # Niebieski kolor główny dla przycisków/linków
+backgroundColor = "#0e1117"           # Czarne tło główne
+secondaryBackgroundColor = "#262730"  # Ciemnoszare tło dla sidebara i elementów
+textColor = "#fafafa"                 # Biały tekst
 font = "sans serif"
 
 [client]

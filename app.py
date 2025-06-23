@@ -87,11 +87,33 @@ st.markdown("""
     .stApp {
         background-color: #0e1117;
         color: #fafafa;
+    }    /* Tło sidebara - force override */
+    .css-1d391kg, .st-emotion-cache-bu46p3, .st-emotion-cache-1yiq2ps > div:first-child {
+        background-color: #0e1117 !important;
+        color: #fafafa !important;
     }
     
-    /* Tło sidebara */
-    .css-1d391kg {
-        background-color: #262730;
+    /* Specyficzne selektory dla sidebara */
+    section[data-testid="stSidebar"] {
+        background-color: #0e1117 !important;
+    }
+    
+    section[data-testid="stSidebar"] > div {
+        background-color: #0e1117 !important;
+    }
+    
+    /* Sidebar content */
+    .st-emotion-cache-jx6q2s {
+        background-color: #0e1117 !important;
+    }
+    
+    /* Wszystkie elementy sidebara - force dark */
+    section[data-testid="stSidebar"], 
+    section[data-testid="stSidebar"] > *, 
+    section[data-testid="stSidebar"] div, 
+    section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
+        background-color: #0e1117 !important;
+        color: #fafafa !important;
     }
     
     /* Tło głównej zawartości */
@@ -105,10 +127,23 @@ st.markdown("""
     h1, h2, h3, h4, h5, h6 {
         color: #fafafa !important;
     }
-    
-    /* Stylowanie tekstu */
+      /* Stylowanie tekstu */
     p, div, span, li {
         color: #fafafa !important;
+    }
+    
+    /* Tekst w sidebarze */
+    section[data-testid="stSidebar"] * {
+        color: #fafafa !important;
+    }
+    
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3, 
+    section[data-testid="stSidebar"] h4, 
+    section[data-testid="stSidebar"] h5, 
+    section[data-testid="stSidebar"] h6 {
+        color: #ffffff !important;
     }
     
     /* Stylowanie inputów */
@@ -134,21 +169,65 @@ st.markdown("""
         transform: translateY(-2px) !important;
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
     }
-    
-    /* Stylowanie przycisków w sidebarze */
+      /* Stylowanie przycisków w sidebarze */
     .css-1d391kg .stButton > button {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
         width: 100% !important;
         margin-bottom: 8px !important;
+        color: white !important;
+        border: none !important;
     }
     
-    /* Stylowanie metryk */
+    /* Stylowanie alertów w sidebarze */
+    section[data-testid="stSidebar"] .stAlert {
+        background-color: rgba(38, 39, 48, 0.8) !important;
+        border: 1px solid #4a4a4a !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Stylowanie inputów w sidebarze */
+    section[data-testid="stSidebar"] .stTextInput input {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+        border: 1px solid #4a4a4a !important;
+    }
+    
+    /* Stylowanie expanderów w sidebarze */
+    section[data-testid="stSidebar"] .stExpander {
+        background-color: rgba(38, 39, 48, 0.6) !important;
+        border: 1px solid #4a4a4a !important;
+        border-radius: 8px !important;
+    }
+    
+    section[data-testid="stSidebar"] .stExpander summary {
+        background-color: rgba(38, 39, 48, 0.8) !important;
+        color: #fafafa !important;
+    }
+      /* Stylowanie metryk */
     .metric-container {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
         padding: 1rem !important;
         border-radius: 12px !important;
         margin: 0.5rem 0 !important;
         border: 1px solid #4a4a4a !important;
+    }
+    
+    /* Stylowanie metryk w sidebarze */
+    section[data-testid="stSidebar"] .stMetric {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        padding: 0.8rem !important;
+        border-radius: 8px !important;
+        margin: 0.3rem 0 !important;
+        border: 1px solid #4a4a4a !important;
+    }
+    
+    section[data-testid="stSidebar"] .stMetric [data-testid="stMetricValue"] {
+        color: #ffffff !important;
+        font-weight: bold !important;
+    }
+    
+    section[data-testid="stSidebar"] .stMetric [data-testid="stMetricLabel"] {
+        color: #cbd5e0 !important;
     }
     
     /* Stylowanie success box */

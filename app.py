@@ -20,10 +20,27 @@ from openai import OpenAI
 
 # Próba importu opcjonalnych pakietów z fallback'ami
 try:
-    from pycaret.regression import load_model, predict_model
+    from pycaret.regression import load_model as pycaret_load_model, predict_model as pycaret_predict_model
     PYCARET_AVAILABLE = True
+    load_model = pycaret_load_model
+    predict_model = pycaret_predict_model
 except ImportError:
     PYCARET_AVAILABLE = False
+    
+    # Fallback funkcje gdy PyCaret nie jest dostępny
+    def load_model(_model_path):  # noqa: ARG001
+        """Fallback funkcja gdy PyCaret nie jest dostępny."""
+        st.error("❌ PyCaret nie jest zainstalowany. Zainstaluj go komendą: pip install pycaret")
+        logger.error("PyCaret nie jest dostępny - model nie może być załadowany")
+        return None
+
+    def predict_model(_model, data=None, **_kwargs):  # noqa: ARG001
+        """Fallback funkcja gdy PyCaret nie jest dostępny."""
+        # Parametr 'data' jest zachowany dla kompatybilności z PyCaret API
+        _ = data  # Jawne oznaczenie nieużywanego parametru
+        st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
+        logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
+        return None
     
 # Sprawdzenie dostępności opcjonalnych pakietów
 PLOTLY_AVAILABLE = False
@@ -79,11 +96,20 @@ class Config:
 config = Config()
 
 # Inicjalizacja klienta OpenAI
+client = None
+OPENAI_AVAILABLE = False
+
 try:
-    client = OpenAI(api_key=config.OPENAI_API_KEY)
-except (ValueError, KeyError, ImportError) as e:
+    if config.OPENAI_API_KEY and config.OPENAI_API_KEY.strip():
+        client = OpenAI(api_key=config.OPENAI_API_KEY)
+        OPENAI_AVAILABLE = True
+        logger.info("OpenAI klient zainicjalizowany pomyślnie")
+    else:
+        logger.warning("Brak klucza OpenAI API - funkcje AI będą niedostępne")
+except (ImportError, ValueError, TypeError) as e:
     logger.error("Błąd inicjalizacji OpenAI: %s", str(e))
-    st.error("❌ Błąd konfiguracji OpenAI API. Sprawdź zmienne środowiskowe.")
+    client = None
+    OPENAI_AVAILABLE = False
 
 # =============================================================================
 # FUNKCJE POMOCNICZE
@@ -292,68 +318,76 @@ def extract_data_with_regex(input_text):
 def extract_user_data(input_text):
     """
     Ekstraktuje dane użytkownika z tekstu wprowadzonego w dowolnej formie.
-    Wykorzystuje OpenAI GPT-4 do analizy tekstu, z fallbackiem do regex.
+    Wykorzystuje OpenAI GPT-4 do analizy tekstu (jeśli dostępne), z fallbackiem do regex.
     
     Args:
         input_text: Tekst wprowadzony przez użytkownika
         
     Returns:
         dict lub None: Słownik z danymi użytkownika (wiek, płeć, tempo) lub None w przypadku błędu
-    """    # Walidacja wejścia
+    """
+    # Walidacja wejścia
     if not input_text or not input_text.strip():
         logger.warning("Pusty tekst wejściowy")
         return None
     
-    prompt = f"""
-    Przeanalizuj poniższy tekst i wyodrębnij następujące informacje niezależnie od ich kolejności:
-    1. Wiek osoby (liczba całkowita)
-    2. Płeć (zamień na 'M' dla mężczyzny lub 'K' dla kobiety)
-    3. Tempo biegu na 5km (liczba z przecinkiem lub kropką, w minutach na kilometr)
+    # Sprawdzenie dostępności OpenAI
+    if OPENAI_AVAILABLE and client:
+        prompt = f"""
+        Przeanalizuj poniższy tekst i wyodrębnij następujące informacje niezależnie od ich kolejności:
+        1. Wiek osoby (liczba całkowita)
+        2. Płeć (zamień na 'M' dla mężczyzny lub 'K' dla kobiety)
+        3. Tempo biegu na 5km (liczba z przecinkiem lub kropką, w minutach na kilometr)
 
-    Zwróć dane w formacie JSON z kluczami: 'Wiek', 'Płeć', '5 km Tempo'
-    Ignoruj dodatkowe informacje w tekście.
-    
-    Przykłady różnych formatów wejściowych:
-    "Kobieta lat 35, biegam 5.30 min/km" → {{"Wiek": 35, "Płeć": "K", "5 km Tempo": 5.3}}
-    "Tempo mam 6,20, jestem facetem i mam 42 lata" → {{"Wiek": 42, "Płeć": "M", "5 km Tempo": 6.2}}
-    "Mężczyzna, 28 lat, 4:45/km" → {{"Wiek": 28, "Płeć": "M", "5 km Tempo": 4.75}}    Tekst do przeanalizowania: {input_text}    """
-    
-    try:
-        # Próba użycia OpenAI API
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system", 
-                    "content": "Jesteś asystentem specjalizującym się w analizie danych biegowych. Twoje zadanie to dokładne wyodrębnienie wieku, płci i tempa biegu z tekstu, niezależnie od kolejności i formatu wprowadzania. Zawsze zwracaj poprawny JSON."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0,
-            max_tokens=200
-        )
+        Zwróć dane w formacie JSON z kluczami: 'Wiek', 'Płeć', '5 km Tempo'
+        Ignoruj dodatkowe informacje w tekście.
         
-        response = completion.choices[0].message.content
-        if response:
-            response = response.strip()
-            logger.info("Otrzymana odpowiedź z OpenAI: %s", response)            # Próba parsowania JSON
-            try:
-                data = json.loads(response)
-                data_is_valid, data_errors = validate_user_data(data)
-                
-                if data_is_valid:
-                    logger.info("Dane wyekstraktowane pomyślnie przez OpenAI")
-                    return data
-                else:
-                    logger.warning("Dane z OpenAI nieprawidłowe: %s", data_errors)
-                    
-            except json.JSONDecodeError as e:
-                logger.warning("Błąd parsowania JSON z OpenAI: %s", str(e))
+        Przykłady różnych formatów wejściowych:
+        "Kobieta lat 35, biegam 5.30 min/km" → {{"Wiek": 35, "Płeć": "K", "5 km Tempo": 5.3}}
+        "Tempo mam 6,20, jestem facetem i mam 42 lata" → {{"Wiek": 42, "Płeć": "M", "5 km Tempo": 6.2}}
+        "Mężczyzna, 28 lat, 4:45/km" → {{"Wiek": 28, "Płeć": "M", "5 km Tempo": 4.75}}
+        
+        Tekst do przeanalizowania: {input_text}
+        """        
+        try:
+            # Próba użycia OpenAI API
+            completion = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "Jesteś asystentem specjalizującym się w analizie danych biegowych. Twoje zadanie to dokładne wyodrębnienie wieku, płci i tempa biegu z tekstu, niezależnie od kolejności i formatu wprowadzania. Zawsze zwracaj poprawny JSON."
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0,
+                max_tokens=200
+            )
             
-    except (ValueError, ConnectionError, ImportError) as e:
-        logger.error("Błąd OpenAI API: %s", str(e))
-      # Fallback: użycie regex
-    logger.info("Próba ekstrakcji danych przy użyciu regex")
+            response = completion.choices[0].message.content
+            if response:
+                response = response.strip()
+                logger.info("Otrzymana odpowiedź z OpenAI: %s", response)
+                
+                # Próba parsowania JSON
+                try:
+                    data = json.loads(response)
+                    data_is_valid, data_errors = validate_user_data(data)
+                    
+                    if data_is_valid:
+                        logger.info("Dane wyekstraktowane pomyślnie przez OpenAI")
+                        return data
+                    else:
+                        logger.warning("Dane z OpenAI nieprawidłowe: %s", data_errors)
+                        
+                except json.JSONDecodeError as e:
+                    logger.warning("Błąd parsowania JSON z OpenAI: %s", str(e))
+                
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error("Błąd OpenAI API: %s", str(e))
+    
+    # Fallback: użycie regex
+    logger.info("Próba ekstrakcji danych przy użyciu regex (OpenAI niedostępne: %s)", not OPENAI_AVAILABLE)
     data = extract_data_with_regex(input_text)
     
     if data:
@@ -467,13 +501,12 @@ def display_sidebar_content():
         
         st.metric("Przewidywania wykonane", predictions_count)
         st.metric("Czas sesji", f"{session_duration/60:.1f} min")
-        
-        # FAQ
+          # FAQ
         with st.expander("ℹ️ Jak to działa? (FAQ)", expanded=False):
-            st.markdown("""        
+            st.markdown(f"""        
             **Jak działa kalkulator?**  
             Twój czas półmaratonu jest szacowany na podstawie wieku, płci i tempa na 5 km. Model został wytrenowany na rzeczywistych wynikach biegaczy z Maratonu Wrocławskiego z lat 2023-2024.  
-            Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez AI (OpenAI GPT-4).
+            Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez {'AI (OpenAI GPT-4)' if OPENAI_AVAILABLE else 'wyrażenia regularne'}.
 
             **Jak interpretować wykresy?**  
             Na wykresach możesz zobaczyć, jak Twój przewidywany czas wypada na tle innych osób tej samej płci i wieku. Czerwona linia to Twój wynik, zielona linia to średnia w danej grupie.
@@ -482,6 +515,11 @@ def display_sidebar_content():
             - Wiek: {config.MIN_AGE}-{config.MAX_AGE} lat
             - Tempo: {config.MIN_TEMPO}-{config.MAX_TEMPO} min/km
             - Model działa najlepiej dla biegaczy amatorów
+            
+            **Status funkcji:**
+            - AI (OpenAI): {'✅ Dostępne' if OPENAI_AVAILABLE else '❌ Niedostępne (brak klucza API)'}
+            - PyCaret: {'✅ Dostępne' if PYCARET_AVAILABLE else '❌ Niedostępne'}
+            - Plotly: {'✅ Dostępne' if PLOTLY_AVAILABLE else '❌ Niedostępne'}
             """)
 
 
@@ -663,7 +701,11 @@ display_sidebar_content()
 
 # Info tylko jeśli nie ma wyniku
 if not oblicz or not st.session_state.get('last_result_success', False):
-    st.info("💡 **Wskazówka:** Możesz pisać w dowolnym stylu - AI rozpozna Twoje dane automatycznie!")
+    if OPENAI_AVAILABLE:
+        st.info("💡 **Wskazówka:** Możesz pisać w dowolnym stylu - AI rozpozna Twoje dane automatycznie!")
+    else:
+        st.info("💡 **Wskazówka:** Podaj dane w formacie: wiek, płeć (M/K/mężczyzna/kobieta), tempo (np. 5.30 min/km)")
+        st.warning("⚠️ **Uwaga:** Funkcje AI są niedostępne (brak klucza OpenAI API). Używamy prostego parsowania tekstu.")
     st.info("📝 **Przykład:** 'Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km'")
 
 # Footer
@@ -674,28 +716,5 @@ st.markdown("""
     <p>Model wytrenowany na danych z Maratonu Wrocławskiego 2023-2024</p>
 </div>
 """, unsafe_allow_html=True)
-
-# =============================================================================
-# FALLBACK FUNKCJE DLA BRAKUJĄCYCH PAKIETÓW
-# =============================================================================
-
-def fallback_load_model(_model_path):  # noqa: ARG001
-    """Fallback funkcja gdy PyCaret nie jest dostępny."""
-    st.error("❌ PyCaret nie jest zainstalowany. Zainstaluj go komendą: pip install pycaret")
-    logger.error("PyCaret nie jest dostępny - model nie może być załadowany")
-    return None
-
-def fallback_predict_model(_model, data=None, **_kwargs):  # noqa: ARG001
-    """Fallback funkcja gdy PyCaret nie jest dostępny."""
-    # Parametr 'data' jest zachowany dla kompatybilności z PyCaret API
-    _ = data  # Jawne oznaczenie nieużywanego parametru
-    st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
-    logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
-    return None
-
-# Ustawienie funkcji w zależności od dostępności pakietów
-if not PYCARET_AVAILABLE:
-    load_model = fallback_load_model
-    predict_model = fallback_predict_model
 
 # =============================================================================

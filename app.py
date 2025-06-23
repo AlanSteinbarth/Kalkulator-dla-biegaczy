@@ -22,22 +22,26 @@ from openai import OpenAI
 try:
     from pycaret.regression import load_model as pycaret_load_model, predict_model as pycaret_predict_model
     PYCARET_AVAILABLE = True
+      # Bezpośrednie przypisanie oryginalnych funkcji PyCaret
     load_model = pycaret_load_model
-    predict_model = pycaret_predict_model
+    predict_model = pycaret_predict_model  # type: ignore[assignment]
+    
 except ImportError:
     PYCARET_AVAILABLE = False
     
-    # Fallback funkcje gdy PyCaret nie jest dostępny
-    def load_model(_model_path):  # noqa: ARG001
+    # Fallback funkcje gdy PyCaret nie jest dostępny - kompatybilne z oryginalnym API
+    def load_model(model_name, platform=None, authentication=None, verbose=True):  # noqa: ARG001
         """Fallback funkcja gdy PyCaret nie jest dostępny."""
+        # Parametry zachowane dla kompatybilności z PyCaret API
+        _ = platform, authentication, verbose  # Jawne oznaczenie nieużywanych parametrów
         st.error("❌ PyCaret nie jest zainstalowany. Zainstaluj go komendą: pip install pycaret")
-        logger.error("PyCaret nie jest dostępny - model nie może być załadowany")
+        logger.error("PyCaret nie jest dostępny - model %s nie może być załadowany", model_name)
         return None
 
-    def predict_model(_model, data=None, **_kwargs):  # noqa: ARG001
-        """Fallback funkcja gdy PyCaret nie jest dostępny."""
-        # Parametr 'data' jest zachowany dla kompatybilności z PyCaret API
-        _ = data  # Jawne oznaczenie nieużywanego parametru
+    def predict_model(estimator, data=None, round=4, verbose=True):  # noqa: ARG001, A002
+        """Fallback funkcja gdy PyCaret nie jest dostępny.""" 
+        # Parametry zachowane dla kompatybilności z PyCaret API
+        _ = estimator, data, round, verbose  # Jawne oznaczenie nieużywanych parametrów  
         st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
         logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
         return None

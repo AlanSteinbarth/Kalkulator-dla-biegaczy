@@ -1,0 +1,25 @@
+WSKAZÓWKI DO NAPRAWY PLIKU APP.PY:
+
+1. Problemy z wcięciami w pliku app.py - główne błędy:
+   - Linia ~598: Nieoczekiwane wcięcie przy "fig1 = px.histogram("
+   - Podobne problemy z wcięciami przy wykresach plotly
+
+2. Inne problemy:
+   - Fragmenty kodu wymagające wyrównania wcięć
+   - Możliwe brakujące znaki nowej linii
+
+3. Zalecane kroki:
+   a) Otwórz plik app.py w edytorze tekstu z funkcją automatycznego formatowania
+   b) Wyrównaj wcięcia ręcznie lub użyj narzędzia do formatowania (np. autopep8, black)
+   c) Zwróć szczególną uwagę na sekcje z wykresami (około linii 580-650)
+   d) Sprawdź składnię: python3 -c "import ast; ast.parse(open('app.py').read()); print('OK')"
+
+4. Konkretne fragmenty do sprawdzenia:
+   - Linia ~598: Wcięcia przy tworzeniu wykresów
+   - Linia ~618: Wcięcia przy drugim wykresie 
+   - Linia ~652-660: Wcięcia w warunkach else
+
+5. Po naprawie wykonaj commit:
+   git add app.py
+   git commit -m "Naprawione problemy z formatowaniem i wcięciami"
+   git push

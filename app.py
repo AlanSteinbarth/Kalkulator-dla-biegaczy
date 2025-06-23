@@ -30,18 +30,17 @@ PLOTLY_AVAILABLE = False
 try:
     import plotly.express as px
     PLOTLY_AVAILABLE = True
-except ImportError:
-    # Zaślepka dla px i figur plotly
+except ImportError:    # Zaślepka dla px i figur plotly
     class PlotlyFigure:
-        def add_vline(self, *args, **kwargs):
+        def add_vline(self, *_args, **_kwargs):
             return self
         
-        def update_layout(self, *args, **kwargs):
+        def update_layout(self, *_args, **_kwargs):
             return self
             
     class PlotlyExpress:
-        def __getattr__(self, name):
-            def method(*args, **kwargs):
+        def __getattr__(self, _name):
+            def method(*_args, **_kwargs):
                 return PlotlyFigure()
             return method
     px = PlotlyExpress()
@@ -340,31 +339,30 @@ def extract_user_data(input_text):
             logger.info("Otrzymana odpowiedź z OpenAI: %s", response)            # Próba parsowania JSON
             try:
                 data = json.loads(response)
-                is_valid, errors_list = validate_user_data(data)
+                data_is_valid, data_errors = validate_user_data(data)
                 
-                if is_valid:
+                if data_is_valid:
                     logger.info("Dane wyekstraktowane pomyślnie przez OpenAI")
                     return data
                 else:
-                    logger.warning("Dane z OpenAI nieprawidłowe: %s", errors_list)
+                    logger.warning("Dane z OpenAI nieprawidłowe: %s", data_errors)
                     
             except json.JSONDecodeError as e:
                 logger.warning("Błąd parsowania JSON z OpenAI: %s", str(e))
             
     except (ValueError, ConnectionError, ImportError) as e:
         logger.error("Błąd OpenAI API: %s", str(e))
-    
-    # Fallback: użycie regex
+      # Fallback: użycie regex
     logger.info("Próba ekstrakcji danych przy użyciu regex")
     data = extract_data_with_regex(input_text)
     
     if data:
-        is_valid, errors_list = validate_user_data(data)
-        if is_valid:
+        data_is_valid, data_errors = validate_user_data(data)
+        if data_is_valid:
             logger.info("Dane wyekstraktowane pomyślnie przez regex")
             return data
         else:
-            logger.warning("Dane z regex nieprawidłowe: %s", errors_list)
+            logger.warning("Dane z regex nieprawidłowe: %s", data_errors)
     
     logger.error("Nie udało się wyekstraktować danych")
     return None
@@ -681,13 +679,13 @@ st.markdown("""
 # FALLBACK FUNKCJE DLA BRAKUJĄCYCH PAKIETÓW
 # =============================================================================
 
-def fallback_load_model(model_path):  # noqa: ARG001
+def fallback_load_model(_model_path):  # noqa: ARG001
     """Fallback funkcja gdy PyCaret nie jest dostępny."""
     st.error("❌ PyCaret nie jest zainstalowany. Zainstaluj go komendą: pip install pycaret")
     logger.error("PyCaret nie jest dostępny - model nie może być załadowany")
     return None
 
-def fallback_predict_model(model, data):  # noqa: ARG001
+def fallback_predict_model(_model, data=None, **_kwargs):  # noqa: ARG001
     """Fallback funkcja gdy PyCaret nie jest dostępny."""
     st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
     logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")

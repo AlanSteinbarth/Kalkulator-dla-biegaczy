@@ -687,6 +687,8 @@ def fallback_load_model(_model_path):  # noqa: ARG001
 
 def fallback_predict_model(_model, data=None, **_kwargs):  # noqa: ARG001
     """Fallback funkcja gdy PyCaret nie jest dostępny."""
+    # Parametr 'data' jest zachowany dla kompatybilności z PyCaret API
+    _ = data  # Jawne oznaczenie nieużywanego parametru
     st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
     logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
     return None

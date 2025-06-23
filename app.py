@@ -337,8 +337,7 @@ def extract_user_data(input_text):
         response = completion.choices[0].message.content
         if response:
             response = response.strip()
-            logger.info("Otrzymana odpowiedź z OpenAI: %s", response)
-              # Próba parsowania JSON
+            logger.info("Otrzymana odpowiedź z OpenAI: %s", response)            # Próba parsowania JSON
             try:
                 data = json.loads(response)
                 is_valid, errors_list = validate_user_data(data)
@@ -354,7 +353,8 @@ def extract_user_data(input_text):
             
     except (ValueError, ConnectionError, ImportError) as e:
         logger.error("Błąd OpenAI API: %s", str(e))
-      # Fallback: użycie regex
+    
+    # Fallback: użycie regex
     logger.info("Próba ekstrakcji danych przy użyciu regex")
     data = extract_data_with_regex(input_text)
     
@@ -584,17 +584,19 @@ if oblicz:
                     user_gender = user_data['Płeć']
                     user_age = int(user_data['Wiek'])
                     predicted_minutes = predicted_seconds / 60
-                      # Wykres dla płci
+                    
+                    # Wykres dla płci
                     col1, col2 = st.columns(2)
                     
                     with col1:
                         df_gender = reference_df[reference_df['Płeć'] == user_gender].copy()
                         if len(df_gender) > 0:
                             df_gender['Czas_minuty'] = df_gender['Czas'] / 60
-                            avg_gender_minutes = df_gender['Czas'].mean() / 60
-                            
+                            avg_gender_minutes = df_gender['Czas'].mean() / 60                            
                             gender_display = "Mężczyzn" if user_gender == "M" else "Kobiet"
-                              # Sprawdzenie dostępności Plotly                            if PLOTLY_AVAILABLE:
+                            
+                            # Sprawdzenie dostępności Plotly
+                            if PLOTLY_AVAILABLE:
                                 fig1 = px.histogram(
                                     df_gender, 
                                     x='Czas_minuty', 
@@ -603,7 +605,6 @@ if oblicz:
                                     labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
                                     color_discrete_sequence=['#636EFA']
                                 )
-                                
                                 fig1.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
                                     annotation_text="Twój wynik", annotation_position="top right")
                                 fig1.add_vline(x=avg_gender_minutes, line_dash="dot", line_color="green",

@@ -25,11 +25,26 @@ try:
 except ImportError:
     PYCARET_AVAILABLE = False
     
+# Sprawdzenie dostępności opcjonalnych pakietów
+PLOTLY_AVAILABLE = False
 try:
     import plotly.express as px
     PLOTLY_AVAILABLE = True
 except ImportError:
-    PLOTLY_AVAILABLE = False
+    # Zaślepka dla px i figur plotly
+    class PlotlyFigure:
+        def add_vline(self, *args, **kwargs):
+            return self
+        
+        def update_layout(self, *args, **kwargs):
+            return self
+            
+    class PlotlyExpress:
+        def __getattr__(self, name):
+            def method(*args, **kwargs):
+                return PlotlyFigure()
+            return method
+    px = PlotlyExpress()
 
 # Konfiguracja strony
 st.set_page_config(
@@ -137,27 +152,28 @@ def validate_user_data(data):
     Returns:
         tuple: (is_valid, list_of_errors)
     """
-    validation_errors = []
+    errors = []  # Zmieniona nazwa, by uniknąć konfliktu z outer scope
     
     # Sprawdzenie wymaganych pól
     required_fields = ['Wiek', 'Płeć', '5 km Tempo']
     for field in required_fields:
         if field not in data:
-            validation_errors.append(f"Brak pola: {field}")
+            errors.append(f"Brak pola: {field}")
     
-    if validation_errors:
-        return False, validation_errors
-      # Walidacja poszczególnych pól
+    if errors:
+        return False, errors
+    
+    # Walidacja poszczególnych pól
     if not is_valid_age(data['Wiek']):
-        validation_errors.append(f"Wiek powinien być liczbą z zakresu {config.MIN_AGE}-{config.MAX_AGE} lat")
+        errors.append(f"Wiek powinien być liczbą z zakresu {config.MIN_AGE}-{config.MAX_AGE} lat")
     
     if not is_valid_gender(data['Płeć']):
-        validation_errors.append("Płeć powinna być określona jako 'M' lub 'K'")
+        errors.append("Płeć powinna być określona jako 'M' lub 'K'")
     
     if not is_valid_tempo(data['5 km Tempo']):
-        validation_errors.append(f"Tempo na 5km powinno być liczbą z zakresu {config.MIN_TEMPO}-{config.MAX_TEMPO} min/km")
+        errors.append(f"Tempo na 5km powinno być liczbą z zakresu {config.MIN_TEMPO}-{config.MAX_TEMPO} min/km")
     
-    return len(validation_errors) == 0, validation_errors
+    return len(errors) == 0, errors
 
 
 # =============================================================================
@@ -322,35 +338,33 @@ def extract_user_data(input_text):
         if response:
             response = response.strip()
             logger.info("Otrzymana odpowiedź z OpenAI: %s", response)
-            
-            # Próba parsowania JSON
+              # Próba parsowania JSON
             try:
                 data = json.loads(response)
-                validation_result, validation_errors = validate_user_data(data)
+                is_valid, errors_list = validate_user_data(data)
                 
-                if validation_result:
+                if is_valid:
                     logger.info("Dane wyekstraktowane pomyślnie przez OpenAI")
                     return data
                 else:
-                    logger.warning("Dane z OpenAI nieprawidłowe: %s", validation_errors)
+                    logger.warning("Dane z OpenAI nieprawidłowe: %s", errors_list)
                     
             except json.JSONDecodeError as e:
                 logger.warning("Błąd parsowania JSON z OpenAI: %s", str(e))
             
     except (ValueError, ConnectionError, ImportError) as e:
         logger.error("Błąd OpenAI API: %s", str(e))
-    
-    # Fallback: użycie regex
+      # Fallback: użycie regex
     logger.info("Próba ekstrakcji danych przy użyciu regex")
     data = extract_data_with_regex(input_text)
     
     if data:
-        validation_result, validation_errors = validate_user_data(data)
-        if validation_result:
+        is_valid, errors_list = validate_user_data(data)
+        if is_valid:
             logger.info("Dane wyekstraktowane pomyślnie przez regex")
             return data
         else:
-            logger.warning("Dane z regex nieprawidłowe: %s", validation_errors)
+            logger.warning("Dane z regex nieprawidłowe: %s", errors_list)
     
     logger.error("Nie udało się wyekstraktować danych")
     return None
@@ -539,11 +553,11 @@ if oblicz:
         if user_data is None:
             st.error("❌ Nie udało się przetworzyć danych. Upewnij się, że podałeś wszystkie wymagane informacje.")
         else:            # Walidacja danych
-            validation_result, validation_errors = validate_user_data(user_data)
+            is_valid, errors_list = validate_user_data(user_data)
             
-            if not validation_result:
+            if not is_valid:
                 st.warning("⚠️ Problemy z danymi:")
-                for error in validation_errors:
+                for error in errors_list:
                     st.write(f"• {error}")
             else:
                 with st.spinner('🏃‍♂️ Przewiduję czas...'):
@@ -580,9 +594,8 @@ if oblicz:
                             avg_gender_minutes = df_gender['Czas'].mean() / 60
                             
                             gender_display = "Mężczyzn" if user_gender == "M" else "Kobiet"
-                              # Sprawdzenie dostępności Plotly
-                            if PLOTLY_AVAILABLE:
-                                fig1 = px.histogram(  # px is imported when PLOTLY_AVAILABLE is True
+                              # Sprawdzenie dostępności Plotly                            if PLOTLY_AVAILABLE:
+                                fig1 = px.histogram(
                                     df_gender, 
                                     x='Czas_minuty', 
                                     nbins=30,
@@ -614,22 +627,31 @@ if oblicz:
                             df_age['Czas_minuty'] = df_age['Czas'] / 60
                             avg_age_minutes = df_age['Czas'].mean() / 60
                             
-                            fig2 = px.histogram(  # px is imported when PLOTLY_AVAILABLE is True
-                                df_age, 
-                                x='Czas_minuty', 
-                                nbins=30,
-                                title=f"Rozkład czasów dla wieku {user_age}±2 lat",
-                                labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
-                                color_discrete_sequence=['#00CC96']
-                            )
-                            
-                            fig2.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
-                                annotation_text="Twój wynik", annotation_position="top right")
-                            fig2.add_vline(x=avg_age_minutes, line_dash="dot", line_color="green",
-                                annotation_text="Średnia", annotation_position="bottom right")
-                            
-                            fig2.update_layout(showlegend=False, height=400)
-                            st.plotly_chart(fig2, use_container_width=True)
+                            # Sprawdzenie dostępności Plotly
+                            if PLOTLY_AVAILABLE:
+                                fig2 = px.histogram(
+                                    df_age, 
+                                    x='Czas_minuty', 
+                                    nbins=30,
+                                    title=f"Rozkład czasów dla wieku {user_age}±2 lat",
+                                    labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
+                                    color_discrete_sequence=['#00CC96']
+                                )
+                                
+                                fig2.add_vline(x=predicted_minutes, line_dash="dash", line_color="red",
+                                    annotation_text="Twój wynik", annotation_position="top right")
+                                fig2.add_vline(x=avg_age_minutes, line_dash="dot", line_color="green",
+                                    annotation_text="Średnia", annotation_position="bottom right")
+                                
+                                fig2.update_layout(showlegend=False, height=400)
+                                st.plotly_chart(fig2, use_container_width=True)
+                            else:
+                                # Fallback gdy plotly nie jest dostępny
+                                chart_html = create_fallback_chart(
+                                    f"Rozkład czasów dla wieku {user_age}±2 lat",
+                                    f"Twój przewidywany czas: {predicted_minutes:.1f} min<br>Średnia grupy: {avg_age_minutes:.1f} min"
+                                )
+                                st.markdown(chart_html, unsafe_allow_html=True)
                             
                             st.metric("Porównanie z grupą wiekową", f"{len(df_age)} osób")
                     

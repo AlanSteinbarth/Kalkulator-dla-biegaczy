@@ -7,7 +7,19 @@ import pandas as pd
 import datetime
 import logging
 import streamlit as st
-from pycaret.regression import load_model, predict_model
+try:
+    from pycaret.regression import load_model, predict_model
+except ImportError:
+    import streamlit as st
+    st.error("❌ Nie można zaimportować modułu pycaret.regression. Sprawdź czy biblioteka jest zainstalowana.")
+    # Fallback implementations to prevent errors when module is missing
+    def load_model(*args, **kwargs):
+        logger.error("Moduł pycaret nie jest dostępny. Nie można załadować modelu.")
+        return None
+    
+    def predict_model(*args, **kwargs):
+        logger.error("Moduł pycaret nie jest dostępny. Nie można wykonać predykcji.")
+        return pd.DataFrame()
 from typing import Optional, Tuple, Union
 from config import config
 

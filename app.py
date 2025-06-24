@@ -50,10 +50,15 @@ except ImportError:
 PLOTLY_AVAILABLE = False
 try:
     import plotly.express as px
+    import plotly.graph_objects as go
     PLOTLY_AVAILABLE = True
-except ImportError:    # Zaślepka dla px i figur plotly
+except ImportError:    
+    # Zaślepka dla px i figur plotly
     class PlotlyFigure:
         def add_vline(self, *_args, **_kwargs):
+            return self
+        
+        def add_trace(self, *_args, **_kwargs):
             return self
         
         def update_layout(self, *_args, **_kwargs):
@@ -70,7 +75,15 @@ except ImportError:    # Zaślepka dla px i figur plotly
             def method(*_args, **_kwargs):
                 return PlotlyFigure()
             return method
+    
+    class PlotlyGraphObjects:
+        def __getattr__(self, _name):
+            def method(*_args, **_kwargs):
+                return PlotlyFigure()
+            return method
+            
     px = PlotlyExpress()
+    go = PlotlyGraphObjects()
 
 # Konfiguracja strony
 st.set_page_config(
@@ -1015,151 +1028,42 @@ def initialize_session_state():
     """Inicjalizuje stan sesji."""
     if 'user_input' not in st.session_state:
         st.session_state['user_input'] = "Np.: Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km"
-    
-    if 'usage_stats' not in st.session_state:
-        import time
-        st.session_state['usage_stats'] = {
-            'predictions_made': 0,
-            'start_time': time.time()
-        }
 
 
 def display_sidebar_content():
-    """Wyświetla zawartość sidebara."""
+    """Wyświetla uproszczoną zawartość sidebara."""
     # Global jest potrzebne do modyfikacji stanu klienta OpenAI w sidebarze
     global client, OPENAI_AVAILABLE  # pylint: disable=global-statement
     
     with st.sidebar:
-        # Sekcja zarządzania kluczem OpenAI
-        st.markdown("### 🤖 Konfiguracja OpenAI")
-        
-        # Status OpenAI
-        if OPENAI_AVAILABLE:
-            st.success("✅ OpenAI jest aktywne")
-        else:
-            st.warning("⚠️ OpenAI jest nieaktywne")
-        
-        # Sprawdzanie klucza z .env
-        env_key_status = "✅ Znaleziono" if config.OPENAI_API_KEY else "❌ Brak"
-        st.info(f"Klucz z .env: {env_key_status}")
-          # Pole do wprowadzenia klucza
-        with st.expander("🔑 Zarządzanie kluczem API", expanded=not OPENAI_AVAILABLE):
-            st.markdown("**Wprowadź klucz OpenAI API:**")
-            st.markdown("_Klucz nie będzie zapisany lokalnie_")
-            
-            # Input dla klucza
-            user_api_key = st.text_input(
-                "Klucz API",
-                type="password",
-                placeholder="sk-...",
-                help="Twój klucz OpenAI API"
-            )
-            
-            col_verify, col_activate = st.columns(2)
-            
-            with col_verify:
-                if st.button("🔍 Zweryfikuj", use_container_width=True):
+        # Uproszczona sekcja OpenAI
+        if not OPENAI_AVAILABLE:
+            with st.expander("⚡ Aktywuj AI", expanded=False):
+                user_api_key = st.text_input("Klucz OpenAI", type="password", placeholder="sk-...")
+                if st.button("Aktywuj", use_container_width=True):
                     if user_api_key:
-                        with st.spinner("Weryfikowanie klucza..."):
-                            key_valid, validation_message = verify_openai_key(user_api_key)
-                            
-                        if key_valid:
-                            st.success(f"✅ {validation_message}")
-                            # Zapisz klucz w session_state dla tej sesji
-                            st.session_state['temp_openai_key'] = user_api_key
-                        else:
-                            st.error(f"❌ {validation_message}")
-                    else:
-                        st.warning("Wprowadź klucz API")
-            
-            with col_activate:
-                if st.button("💾 Aktywuj", use_container_width=True):
-                    if user_api_key:
-                        with st.spinner("Aktywowanie OpenAI..."):
-                            success, message = initialize_openai_client(user_api_key)
-                            
+                        success, _ = initialize_openai_client(user_api_key)
                         if success:
-                            st.success(f"✅ {message}")
-                            st.session_state['temp_openai_key'] = user_api_key
                             st.rerun()
-                        else:
-                            st.error(f"❌ {message}")
-                    else:
-                        st.warning("Wprowadź klucz API")
-            
-            # Przycisk do deaktywacji
-            if OPENAI_AVAILABLE:
-                if st.button("🔴 Deaktywuj OpenAI", use_container_width=True):
-                    client = None
-                    OPENAI_AVAILABLE = False
-                    if 'temp_openai_key' in st.session_state:
-                        del st.session_state['temp_openai_key']
-                    st.success("OpenAI zostało deaktywowane")
-                    st.rerun()
+        else:
+            st.success("⚡ AI aktywne")
+            if st.button("Wyłącz AI", use_container_width=True):
+                client = None
+                OPENAI_AVAILABLE = False
+                st.rerun()
         
         st.divider()
-        
-        # Metryki modelu
-        st.markdown("### 📈 Metryki modelu")
-        metrics = {
-            'R² Score': 0.85,
-            'MAE (minuty)': 12.3,
-            'Próbek treningowych': 1247,
-            'Algorytm': 'Huber Regression'
-        }
-        
-        for metric, value in metrics.items():
-            if isinstance(value, float):
-                st.metric(metric, f"{value:.2f}")
-            else:
-                st.metric(metric, value)
-        
-        st.divider()
-        
-        # Przykłady
-        st.markdown("### 💡 Przykłady danych")
+          # Tylko 2 przykłady
+        st.markdown("### 💡 Przykłady")
         examples = [
-            "Mam 28 lat, jestem kobietą, tempo 5km: 4:45",
-            "35 lat, mężczyzna, biegam 5km w 5:20", 
-            "Kobieta, 42 lata, mój czas na 5km to 6:10",
-            "Facet, 30 lat, 5 kilometrów w 4.5 minuty na km"
+            "28 lat, kobieta, tempo 4:45",
+            "35 lat, mężczyzna, tempo 5:20"
         ]
         
         for i, example in enumerate(examples, 1):
             if st.button(f"Przykład {i}", key=f"example_{i}", use_container_width=True):
                 st.session_state['user_input'] = example
                 st.rerun()
-        
-        st.divider()
-        
-        # Statystyki sesji
-        st.markdown("### 📊 Statystyki sesji")
-        predictions_count = st.session_state['usage_stats']['predictions_made']
-        import time
-        session_duration = time.time() - st.session_state['usage_stats']['start_time']
-        
-        st.metric("Przewidywania wykonane", predictions_count)
-        st.metric("Czas sesji", f"{session_duration/60:.1f} min")
-          # FAQ
-        with st.expander("ℹ️ Jak to działa? (FAQ)", expanded=False):
-            st.markdown(f"""        
-            **Jak działa kalkulator?**  
-            Twój czas półmaratonu jest szacowany na podstawie wieku, płci i tempa na 5 km. Model został wytrenowany na rzeczywistych wynikach biegaczy z Maratonu Wrocławskiego z lat 2023-2024.  
-            Wykorzystujemy model uczenia maszynowego (PyCaret, regresja Huber), a dane wejściowe są automatycznie rozpoznawane przez {'AI (OpenAI GPT-4)' if OPENAI_AVAILABLE else 'wyrażenia regularne'}.
-
-            **Jak interpretować wykresy?**  
-            Na wykresach możesz zobaczyć, jak Twój przewidywany czas wypada na tle innych osób tej samej płci i wieku. Czerwona linia to Twój wynik, zielona linia to średnia w danej grupie.
-            
-            **Jakie są ograniczenia?**
-            - Wiek: {config.MIN_AGE}-{config.MAX_AGE} lat
-            - Tempo: {config.MIN_TEMPO}-{config.MAX_TEMPO} min/km
-            - Model działa najlepiej dla biegaczy amatorów
-            
-            **Status funkcji:**
-            - AI (OpenAI): {'✅ Dostępne' if OPENAI_AVAILABLE else '❌ Niedostępne (brak klucza API)'}
-            - PyCaret: {'✅ Dostępne' if PYCARET_AVAILABLE else '❌ Niedostępne'}
-            - Plotly: {'✅ Dostępne' if PLOTLY_AVAILABLE else '❌ Niedostępne'}
-            """)
 
 
 # =============================================================================
@@ -1170,16 +1074,16 @@ def display_sidebar_content():
 initialize_session_state()
 reference_df = load_reference_data()
 
-# Wyśrodkowany tytuł z lepszym stylowaniem
+# Nagłówek z emoji i opisem
 st.markdown("""
 <div style='text-align: center; margin-bottom: 2rem;'>
-    <h1 style='color: #fafafa; font-size: 3em; font-weight: bold; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);'>
-        🏃‍♂️ Kalkulator dla biegaczy 🥇
+    <h1 style='color: #fafafa; font-size: 3em; margin-bottom: 0.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);'>
+        🏃‍♂️ Kalkulator dla biegaczy 🏃‍♀️
     </h1>
-    <p style='color: #cbd5e0; font-size: 1.2em; margin-top: 0;'>
-        <strong>Wersja 2.0</strong> - Wprowadź swoje dane, a aplikacja oszacuje Twój czas ukończenia półmaratonu 
-        na podstawie wytrenowanego modelu uczenia maszynowego.
-    </p>
+    <h2 style='color: #667eea; font-size: 1.5em; margin-bottom: 1rem; font-weight: 300;'>
+        Przewidywanie czasu półmaratonu za pomocą sztucznej inteligencji i uczenia maszynowego. 
+        Analiza oparta na danych z Maratonu Wrocławskiego 2023-2024
+    </h2>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1271,7 +1175,8 @@ if oblicz:
             
         if user_data is None:
             st.error("❌ Nie udało się przetworzyć danych. Upewnij się, że podałeś wszystkie wymagane informacje.")
-        else:            # Walidacja danych
+        else:
+            # Walidacja danych
             is_valid, errors_list = validate_user_data(user_data)
             
             if not is_valid:
@@ -1285,115 +1190,173 @@ if oblicz:
                 if result:
                     predicted_seconds, predicted_time = result
                     
-                    # Zwiększ licznik przewidywań
-                    st.session_state['usage_stats']['predictions_made'] += 1
-                    
-                    # Wyświetl wynik
+                    # Wyświetlenie wyniku
                     st.markdown(f"""
                     <div class="success-box">
-                        <h3>✅ Przewidywany czas ukończenia półmaratonu: <strong>{predicted_time}</strong></h3>
-                        <p>Wynik obliczony na podstawie: {user_data['Wiek']} lat, płeć: {'Kobieta' if user_data['Płeć'] == 'K' else 'Mężczyzna'}, tempo 5km: {user_data['5 km Tempo']} min/km</p>
+                        <h3>✅ Przewidywany czas: <strong>{predicted_time}</strong></h3>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Wykresy porównawcze
+                    # =============================================================================
+                    # SEKCJA ANALIZY PORÓWNAWCZEJ
+                    # =============================================================================
+                    
                     st.markdown("---")
-                    st.markdown("## 📊 Analiza porównawcza")
+                    st.markdown("### 📊 Analiza porównawcza")
                     
-                    user_gender = user_data['Płeć']
-                    user_age = int(user_data['Wiek'])
-                    predicted_minutes = predicted_seconds / 60
-                    
-                    # Wykres dla płci
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        df_gender = reference_df[reference_df['Płeć'] == user_gender].copy()
-                        if len(df_gender) > 0:
-                            df_gender['Czas_minuty'] = df_gender['Czas'] / 60
-                            avg_gender_minutes = df_gender['Czas'].mean() / 60                            
-                            gender_display = "Mężczyzn" if user_gender == "M" else "Kobiet"
-                              # Sprawdzenie dostępności Plotly
-                            if PLOTLY_AVAILABLE:
-                                fig1 = px.histogram(
-                                    df_gender, 
-                                    x='Czas_minuty', 
-                                    nbins=30,
-                                    title=f"Rozkład czasów dla {gender_display.lower()}",
-                                    labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
-                                    color_discrete_sequence=['#667eea']
+                    # Porównanie z danymi referencyjnymi
+                    if not reference_df.empty:
+                        # Filtrowanie danych dla podobnej grupy wiekowej i płci
+                        age_range = 5
+                        similar_data = reference_df[
+                            (reference_df['Wiek'] >= user_data['Wiek'] - age_range) &
+                            (reference_df['Wiek'] <= user_data['Wiek'] + age_range) &
+                            (reference_df['Płeć'] == user_data['Płeć'])                        ]
+                        
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            if len(similar_data) > 0:
+                                avg_time = similar_data['Czas'].mean()
+                                avg_time_formatted = str(datetime.timedelta(seconds=int(avg_time)))
+                                delta = predicted_seconds - avg_time
+                                delta_formatted = f"{'+' if delta > 0 else ''}{int(delta)} sek"
+                                st.metric(
+                                    "Średnia dla podobnych", 
+                                    avg_time_formatted,
+                                    delta_formatted
                                 )
-                                fig1.add_vline(x=predicted_minutes, line_dash="dash", line_color="#ff6b6b",
-                                    annotation_text="Twój wynik", annotation_position="top right")
-                                fig1.add_vline(x=avg_gender_minutes, line_dash="dot", line_color="#51cf66",
-                                    annotation_text="Średnia", annotation_position="bottom right")
-                                
-                                # Ciemny motyw dla wykresu
-                                fig1.update_layout(
-                                    showlegend=False, 
-                                    height=400,
-                                    plot_bgcolor='rgba(0,0,0,0)',
-                                    paper_bgcolor='rgba(0,0,0,0)',
-                                    font_color='#fafafa',
-                                    title_font_color='#fafafa'
-                                )
-                                fig1.update_xaxes(gridcolor='#4a4a4a', color='#fafafa')
-                                fig1.update_yaxes(gridcolor='#4a4a4a', color='#fafafa')
-                                
-                                st.plotly_chart(fig1, use_container_width=True)
                             else:
-                                # Fallback gdy plotly nie jest dostępny
-                                chart_html = create_fallback_chart(
-                                    f"Rozkład czasów dla {gender_display.lower()}",
-                                    f"Twój przewidywany czas: {predicted_minutes:.1f} min<br>Średnia grupy: {avg_gender_minutes:.1f} min"
-                                )
-                                st.markdown(chart_html, unsafe_allow_html=True)
-                            
-                            st.metric("Porównanie z grupą", f"{len(df_gender)} osób")
-                    
-                    with col2:
-                        df_age = reference_df[reference_df['Wiek'].between(user_age-2, user_age+2)].copy()
-                        if len(df_age) > 0:
-                            df_age['Czas_minuty'] = df_age['Czas'] / 60
-                            avg_age_minutes = df_age['Czas'].mean() / 60
-                              # Sprawdzenie dostępności Plotly
-                            if PLOTLY_AVAILABLE:
-                                fig2 = px.histogram(
-                                    df_age, 
-                                    x='Czas_minuty', 
-                                    nbins=30,
-                                    title=f"Rozkład czasów dla wieku {user_age}±2 lat",
-                                    labels={"Czas_minuty": "Czas (minuty)", "count": "Liczba"},
-                                    color_discrete_sequence=['#4ecdc4']
-                                )
-                                
-                                fig2.add_vline(x=predicted_minutes, line_dash="dash", line_color="#ff6b6b",
-                                    annotation_text="Twój wynik", annotation_position="top right")
-                                fig2.add_vline(x=avg_age_minutes, line_dash="dot", line_color="#51cf66",
-                                    annotation_text="Średnia", annotation_position="bottom right")
-                                
-                                # Ciemny motyw dla wykresu
-                                fig2.update_layout(
-                                    showlegend=False, 
-                                    height=400,
-                                    plot_bgcolor='rgba(0,0,0,0)',
-                                    paper_bgcolor='rgba(0,0,0,0)',
-                                    font_color='#fafafa',
-                                    title_font_color='#fafafa'
-                                )
-                                fig2.update_xaxes(gridcolor='#4a4a4a', color='#fafafa')
-                                fig2.update_yaxes(gridcolor='#4a4a4a', color='#fafafa')
-                                
-                                st.plotly_chart(fig2, use_container_width=True)
+                                st.metric("Średnia dla podobnych", "Brak danych", "")
+                        
+                        with col2:
+                            percentile = 50
+                            if len(reference_df) > 0:
+                                percentile = (reference_df['Czas'] < predicted_seconds).mean() * 100
+                            st.metric("Percentyl", f"{percentile:.0f}%", "")
+                        
+                        with col3:
+                            if len(similar_data) > 0:
+                                better_count = (similar_data['Czas'] > predicted_seconds).sum()
+                                total_count = len(similar_data)
+                                percentage = (better_count / total_count) * 100 if total_count > 0 else 0
+                                st.metric("Lepszy od", f"{percentage:.0f}%", f"z {total_count} osób")
                             else:
-                                # Fallback gdy plotly nie jest dostępny
-                                chart_html = create_fallback_chart(
-                                    f"Rozkład czasów dla wieku {user_age}±2 lat",
-                                    f"Twój przewidywany czas: {predicted_minutes:.1f} min<br>Średnia grupy: {avg_age_minutes:.1f} min"
+                                st.metric("Lepszy od", "Brak danych", "")
+                          # Wykres porównawczy
+                        st.markdown("#### 📈 Rozkład czasów w Twojej grupie")
+                        
+                        if PLOTLY_AVAILABLE and len(similar_data) > 0:
+                            try:
+                                fig = go.Figure()
+                                
+                                # Histogram czasów podobnych biegaczy
+                                fig.add_trace(go.Histogram(
+                                    x=similar_data['Czas'] / 60,  # Konwersja na minuty
+                                    nbinsx=20,
+                                    name='Podobni biegacze',
+                                    opacity=0.7,
+                                    marker_color='lightblue'
+                                ))
+                                
+                                # Linia dla przewidywanego czasu
+                                fig.add_vline(
+                                    x=predicted_seconds / 60,
+                                    line_dash="dash",
+                                    line_color="red",
+                                    annotation_text="Twój przewidywany czas",
+                                    annotation_position="top"
                                 )
-                                st.markdown(chart_html, unsafe_allow_html=True)
-                            
-                            st.metric("Porównanie z grupą wiekową", f"{len(df_age)} osób")
+                                
+                                fig.update_layout(
+                                    title=f"Rozkład czasów półmaratonu ({user_data['Płeć']}, {user_data['Wiek']}±{age_range} lat)",
+                                    xaxis_title="Czas (minuty)",
+                                    yaxis_title="Liczba biegaczy",
+                                    template="plotly_dark",
+                                    showlegend=False
+                                )
+                                
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                            except Exception as e:
+                                logger.error("Błąd tworzenia wykresu: %s", str(e))
+                                st.markdown(create_fallback_chart(
+                                    "Rozkład czasów w Twojej grupie",
+                                    f"Wykres porównujący Twój przewidywany czas z {len(similar_data)} podobnymi biegaczami"
+                                ), unsafe_allow_html=True)
+                        else:
+                            st.markdown(create_fallback_chart(
+                                "Rozkład czasów w Twojej grupie",
+                                f"Analiza porównawcza z {len(similar_data)} podobnymi biegaczami" if len(similar_data) > 0 else "Brak danych do porównania"
+                            ), unsafe_allow_html=True)
+                        
+                        # Analiza tempa vs czas
+                        st.markdown("#### 🎯 Zależność tempo vs czas półmaratonu")
+                        
+                        if PLOTLY_AVAILABLE and len(reference_df) > 10:
+                            try:                                # Scatter plot tempo vs czas półmaratonu
+                                fig = px.scatter(
+                                    reference_df, 
+                                    x='5 km Tempo', 
+                                    y='Czas',
+                                    color='Płeć',
+                                    title="Zależność między tempem na 5km a czasem półmaratonu",
+                                    labels={
+                                        '5 km Tempo': 'Tempo na 5km (min/km)',
+                                        'Czas': 'Czas półmaratonu (sekundy)',
+                                        'Płeć': 'Płeć'
+                                    },
+                                    template="plotly_dark"
+                                )
+                                
+                                # Dodaj punkt użytkownika
+                                fig.add_trace(go.Scatter(
+                                    x=[user_data['5 km Tempo']],
+                                    y=[predicted_seconds],
+                                    mode='markers',
+                                    marker=dict(size=15, color='red', symbol='star'),
+                                    name='Twój wynik',
+                                    showlegend=True
+                                ))
+                                
+                                fig.update_layout(
+                                    height=500,
+                                    showlegend=True
+                                )
+                                
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                            except Exception as e:
+                                logger.error("Błąd tworzenia scatter plot: %s", str(e))
+                                st.markdown(create_fallback_chart(
+                                    "Zależność tempo vs czas półmaratonu",
+                                    "Wykres przedstawiający korelację między tempem na 5km a czasem półmaratonu"
+                                ), unsafe_allow_html=True)
+                        else:
+                            st.markdown(create_fallback_chart(
+                                "Zależność tempo vs czas półmaratonu",
+                                "Analiza korelacji między tempem na 5km a czasem półmaratonu"
+                            ), unsafe_allow_html=True)
+                        
+                        # Dodatkowe statystyki
+                        st.markdown("#### 📋 Dodatkowe statystyki")
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.markdown("**Twoje dane:**")
+                            st.write(f"• Wiek: {user_data['Wiek']} lat")
+                            st.write(f"• Płeć: {'Kobieta' if user_data['Płeć'] == 'K' else 'Mężczyzna'}")
+                            st.write(f"• Tempo 5km: {user_data['5 km Tempo']:.2f} min/km")
+                            st.write(f"• Przewidywany czas: {predicted_time}")
+                        
+                        with col2:
+                            if len(similar_data) > 0:
+                                st.markdown("**Statystyki grupy porównawczej:**")
+                                st.write(f"• Liczba osób: {len(similar_data)}")
+                                st.write(f"• Średnie tempo 5km: {similar_data['5 km Tempo'].mean():.2f} min/km")
+                                st.write(f"• Średni czas półmaratonu: {str(datetime.timedelta(seconds=int(similar_data['Czas'].mean())))}")
+                                best_time = similar_data['Czas'].min()
+                                st.write(f"• Najlepszy czas: {str(datetime.timedelta(seconds=int(best_time)))}")
                     
                     st.session_state['last_result_success'] = True
                 else:
@@ -1401,19 +1364,6 @@ if oblicz:
 
 # Wyświetl sidebar
 display_sidebar_content()
-
-# Info tylko jeśli nie ma wyniku
-if not oblicz or not st.session_state.get('last_result_success', False):
-    if OPENAI_AVAILABLE:
-        st.info("💡 **Wskazówka:** Możesz pisać w dowolnym stylu - AI rozpozna Twoje dane automatycznie!")
-        st.success("🤖 **OpenAI aktywne** - Inteligentne parsowanie tekstu włączone")
-    else:
-        st.info("💡 **Wskazówka:** Podaj dane w formacie: wiek, płeć (M/K/mężczyzna/kobieta), tempo (np. 5.30 min/km)")
-        if config.OPENAI_API_KEY:
-            st.warning("⚠️ **Uwaga:** Błąd inicjalizacji OpenAI. Sprawdź klucz API w sidebarze.")
-        else:
-            st.warning("⚠️ **Uwaga:** funkcje AI są niedostępne. Dodaj klucz w sidebarze lub pliku .env dla pełnej funkcjonalności.")
-    st.info("📝 **Przykład:** 'Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km'")
 
 # Footer
 st.markdown("---")

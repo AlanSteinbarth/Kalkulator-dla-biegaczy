@@ -8,7 +8,11 @@ import datetime
 import logging
 import streamlit as st
 from typing import Optional, Tuple, Union
-from config import config
+
+# Stałe konfiguracyjne
+MODEL_PATH = "huber_model_halfmarathon_time"
+DATA_PATH = "df_cleaned.csv"
+MODEL_CACHE_TTL = 3600  # Cache na 1 godzinę
 
 # Próba importu PyCaret z obsługą błędów
 PYCARET_AVAILABLE = False
@@ -54,7 +58,7 @@ def calculate_5km_time(tempo: Union[float, str]) -> float:
     return tempo_decimal * 5 * 60
 
 
-@st.cache_resource(ttl=config.MODEL_CACHE_TTL)
+@st.cache_resource(ttl=MODEL_CACHE_TTL)
 def load_model_cached(model_path: str):
     """
     Ładuje model ML z cache'owaniem przez Streamlit.
@@ -96,7 +100,7 @@ def make_prediction(user_data: dict) -> Optional[Tuple[float, str]]:
         return None
         
     try:
-        model = load_model_cached(config.MODEL_PATH)
+        model = load_model_cached(MODEL_PATH)
         if model is None:
             return None
             
@@ -129,7 +133,7 @@ def load_reference_data() -> pd.DataFrame:
         DataFrame: Dane referencyjne z czasami biegaczy
     """
     try:
-        df = pd.read_csv(config.DATA_PATH)
+        df = pd.read_csv(DATA_PATH)
         logger.info("Dane referencyjne załadowane: %d rekordów", len(df))
         return df
     except (FileNotFoundError, pd.errors.EmptyDataError, pd.errors.ParserError) as e:

@@ -5,7 +5,12 @@
 
 import re
 from typing import Union, Optional
-from config import config
+
+# Stałe konfiguracyjne
+MIN_AGE = 10
+MAX_AGE = 100
+MIN_TEMPO = 3.0
+MAX_TEMPO = 10.0
 
 
 def is_valid_age(age: Union[int, str, float, None]) -> bool:
@@ -30,7 +35,7 @@ def is_valid_age(age: Union[int, str, float, None]) -> bool:
         return False
     try:
         age_int = int(age)
-        return config.MIN_AGE <= age_int <= config.MAX_AGE
+        return MIN_AGE <= age_int <= MAX_AGE
     except (ValueError, TypeError):
         return False
 
@@ -57,7 +62,7 @@ def is_valid_tempo(tempo: Union[float, str, int, None]) -> bool:
         return False
     try:
         tempo_float = float(tempo)
-        return config.MIN_TEMPO <= tempo_float <= config.MAX_TEMPO
+        return MIN_TEMPO <= tempo_float <= MAX_TEMPO
     except (ValueError, TypeError):
         return False
 
@@ -100,13 +105,13 @@ def validate_user_data(data: dict) -> tuple[bool, list[str]]:
     
     # Walidacja poszczególnych pól
     if not is_valid_age(data['Wiek']):
-        errors.append(f"Wiek powinien być liczbą z zakresu {config.MIN_AGE}-{config.MAX_AGE} lat")
+        errors.append(f"Wiek powinien być liczbą z zakresu {MIN_AGE}-{MAX_AGE} lat")
     
     if not is_valid_gender(data['Płeć']):
         errors.append("Płeć powinna być określona jako 'M' lub 'K'")
     
     if not is_valid_tempo(data['5 km Tempo']):
-        errors.append(f"Tempo na 5km powinno być liczbą z zakresu {config.MIN_TEMPO}-{config.MAX_TEMPO} min/km")
+        errors.append(f"Tempo na 5km powinno być liczbą z zakresu {MIN_TEMPO}-{MAX_TEMPO} min/km")
     
     return len(errors) == 0, errors
 

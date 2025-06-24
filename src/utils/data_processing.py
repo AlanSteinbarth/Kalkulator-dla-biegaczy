@@ -15,14 +15,16 @@ from openai import OpenAI
 # Dodanie głównego katalogu do ścieżki
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from config import config  # pylint: disable=wrong-import-position
 from src.utils.validation import extract_data_with_regex, validate_user_data  # pylint: disable=wrong-import-position
 
 # Konfiguracja loggera
 logger = logging.getLogger(__name__)
 
-# Inicjalizacja klienta OpenAI
-client = OpenAI(api_key=config.OPENAI_API_KEY)
+# Inicjalizacja klienta OpenAI (opcjonalne - jeśli klucz API jest dostępny)
+try:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) if os.getenv("OPENAI_API_KEY") else None
+except Exception:  # pylint: disable=broad-except
+    client = None
 
 
 def extract_user_data(user_input: str) -> Optional[dict]:
@@ -64,23 +66,27 @@ def extract_user_data(user_input: str) -> Optional[dict]:
 
     try:
         # Próba użycia OpenAI API
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                    "role": "system",
-                    "content": ("Jesteś asystentem specjalizującym się w analizie danych "
-                               "biegowych. Twoje zadanie to dokładne wyodrębnienie wieku, "
-                               "płci i tempa biegu z tekstu, niezależnie od kolejności "
-                               "i formatu wprowadzania. Zawsze zwracaj poprawny JSON.")
-                },
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0,
-            max_tokens=200
-        )
+        if client is not None:
+            completion = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": ("Jesteś asystentem specjalizującym się w analizie danych "
+                                   "biegowych. Twoje zadanie to dokładne wyodrębnienie wieku, "
+                                   "płci i tempa biegu z tekstu, niezależnie od kolejności "
+                                   "i formatu wprowadzania. Zawsze zwracaj poprawny JSON.")
+                    },
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0,
+                max_tokens=200
+            )
 
-        response = completion.choices[0].message.content
+            response = completion.choices[0].message.content
+        else:
+            logger.warning("Brak klienta OpenAI, pomijanie zapytania do API.")
+            response = None
         if response:
             response = response.strip()
             logger.info("Otrzymana odpowiedź z OpenAI: %s", response)

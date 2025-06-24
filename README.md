@@ -235,3 +235,38 @@ A: Model ma R² = 0.85, średni błąd to ~12 minut.
 *Stworzony z ❤️ dla społeczności biegaczy*
 
 </div>
+
+## 🔑 Obsługa klucza OpenAI API
+
+### Status klucza w aplikacji
+Aplikacja wyświetla szczegółowe informacje o statusie klucza OpenAI w sidebarze:
+
+- ✅ **Klucz prawidłowy** - AI jest aktywne, zaawansowana analiza tekstu włączona
+- ❌ **Klucz nieprawidłowy** - Problemy z weryfikacją klucza
+- ⚠️ **Brak klucza** - Używany jest prostszy tryb analizy (regex)
+
+### Konfiguracja klucza
+
+#### Opcja 1: Plik .env (zalecana)
+```bash
+# Utwórz plik .env w głównym katalogu
+echo "OPENAI_API_KEY=sk-proj-twoj_klucz_tutaj" > .env
+```
+
+#### Opcja 2: Tymczasowo w aplikacji
+1. Uruchom aplikację bez klucza w .env
+2. W sidebarze kliknij **"🔧 Wprowadź klucz tymczasowo"**
+3. Wpisz klucz i kliknij **"✅ Aktywuj"**
+4. Klucz będzie aktywny tylko w bieżącej sesji
+
+### Komunikaty dla użytkownika
+- **🔍 Sprawdź** - weryfikuje poprawność klucza bez aktywacji
+- **🧪 Testuj klucz z .env** - testuje klucz z pliku konfiguracyjnego
+- **🔄 Ponownie sprawdź klucz** - weryfikuje aktywny klucz
+- **🔴 Wyłącz AI** - dezaktywuje tryb AI
+
+### Rozwiązywanie problemów
+- **Nieprawidłowy format**: Klucz musi zaczynać się od 'sk-'
+- **Klucz wygasł**: Sprawdź na [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **Problemy z rozliczeniami**: Sprawdź [platform.openai.com/usage](https://platform.openai.com/usage)
+- **Bez klucza**: Aplikacja działa w trybie podstawowym (analiza regex)

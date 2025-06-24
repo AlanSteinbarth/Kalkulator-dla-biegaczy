@@ -1030,30 +1030,133 @@ def initialize_session_state():
         st.session_state['user_input'] = "Np.: Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km"
 
 
+def display_openai_status():
+    """Wyświetla szczegółowy status klucza OpenAI API."""
+    if config.OPENAI_API_KEY and config.OPENAI_API_KEY.strip():
+        # Sprawdź czy klucz jest prawidłowy
+        if OPENAI_AVAILABLE:
+            st.success("✅ **Klucz OpenAI prawidłowy**")
+            st.info("🤖 **AI włączone** - Aplikacja korzysta z zaawansowanej analizy tekstu")
+        else:
+            # Klucz istnieje ale nie jest prawidłowy
+            st.error("❌ **Klucz OpenAI nieprawidłowy**")
+            st.warning("⚠️ **Problem z kluczem API:**")
+            st.write("• Sprawdź czy klucz jest poprawny")
+            st.write("• Upewnij się, że masz środki na koncie OpenAI")
+            st.write("• Sprawdź czy klucz nie wygasł")
+    else:
+        # Brak klucza w .env
+        st.warning("⚠️ **Brak klucza OpenAI**")
+        st.info("💡 **Wskazówki:**")
+        st.write("• Dodaj klucz do pliku `.env`")
+        st.write("• Lub wprowadź klucz tymczasowo poniżej")
+        st.write("• Bez klucza używany jest prostszy tryb analizy")
+
+
 def display_sidebar_content():
-    """Wyświetla uproszczoną zawartość sidebara."""
+    """Wyświetla rozbudowaną zawartość sidebara z szczegółowym statusem OpenAI."""
     # Global jest potrzebne do modyfikacji stanu klienta OpenAI w sidebarze
     global client, OPENAI_AVAILABLE  # pylint: disable=global-statement
     
     with st.sidebar:
-        # Uproszczona sekcja OpenAI
+        st.markdown("### 🔑 Status OpenAI API")
+        
+        # Wyświetl szczegółowy status klucza
+        display_openai_status()
+        
+        # Sekcja do wprowadzania klucza tymczasowego
         if not OPENAI_AVAILABLE:
-            with st.expander("⚡ Aktywuj AI", expanded=False):
-                user_api_key = st.text_input("Klucz OpenAI", type="password", placeholder="sk-...")
-                if st.button("Aktywuj", use_container_width=True):
-                    if user_api_key:
-                        success, _ = initialize_openai_client(user_api_key)
-                        if success:
-                            st.rerun()
+            with st.expander("🔧 Wprowadź klucz tymczasowo", expanded=False):
+                st.markdown("**Wprowadź swój klucz OpenAI:**")
+                user_api_key = st.text_input(
+                    "Klucz API", 
+                    type="password", 
+                    placeholder="sk-proj-...",
+                    help="Klucz musi zaczynać się od 'sk-'"
+                )
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔍 Sprawdź", use_container_width=True):
+                        if user_api_key:
+                            with st.spinner("Weryfikuję klucz..."):
+                                is_valid, message = verify_openai_key(user_api_key)
+                            
+                            if is_valid:
+                                st.success(f"✅ {message}")
+                            else:
+                                st.error(f"❌ {message}")
+                        else:
+                            st.warning("⚠️ Wprowadź klucz API")
+                
+                with col2:
+                    if st.button("✅ Aktywuj", use_container_width=True):
+                        if user_api_key:
+                            with st.spinner("Aktywuję AI..."):
+                                success, message = initialize_openai_client(user_api_key)
+                            
+                            if success:
+                                st.success(f"✅ {message}")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {message}")
+                        else:
+                            st.warning("⚠️ Wprowadź klucz API")
+                
+                st.markdown("---")
+                st.markdown("**ℹ️ Informacje:**")
+                st.write("• Klucz nie jest zapisywany na stałe")
+                st.write("• Będzie aktywny tylko w tej sesji")
+                st.write("• Aby zapisać na stałe, dodaj do `.env`")
+                
+                # Jeśli jest klucz w .env, pokaż opcję testowania
+                if config.OPENAI_API_KEY and config.OPENAI_API_KEY.strip():
+                    st.markdown("---")
+                    st.markdown("**� Klucz z pliku .env:**")
+                    if st.button("🧪 Testuj klucz z .env", use_container_width=True):
+                        with st.spinner("Testuję klucz z .env..."):
+                            success, message = initialize_openai_client()
+                            if success:
+                                st.success(f"✅ {message}")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {message}")
         else:
-            st.success("⚡ AI aktywne")
-            if st.button("Wyłącz AI", use_container_width=True):
-                client = None
-                OPENAI_AVAILABLE = False
-                st.rerun()
+            # Jeśli AI jest aktywne
+            with st.expander("🤖 Zarządzaj AI", expanded=False):
+                # Opcja weryfikacji klucza ponownie
+                if st.button("🔄 Ponownie sprawdź klucz", use_container_width=True):
+                    with st.spinner("Weryfikuję klucz..."):
+                        # Sprawdź aktualny klucz
+                        current_key = config.OPENAI_API_KEY if client else None
+                        if current_key:
+                            is_valid, status_message = verify_openai_key(current_key)
+                            if is_valid:
+                                st.success(f"✅ {status_message}")
+                            else:
+                                st.error(f"❌ {status_message}")
+                                # Dezaktywuj jeśli klucz nie działa
+                                client = None
+                                OPENAI_AVAILABLE = False
+                                st.rerun()
+                        else:
+                            st.warning("⚠️ Nie można zweryfikować klucza")
+                
+                if st.button("🔴 Wyłącz AI", use_container_width=True):
+                    client = None
+                    OPENAI_AVAILABLE = False
+                    st.info("🔌 OpenAI API zostało wyłączone")
+                    st.rerun()
+                
+                st.markdown("---")
+                st.markdown("**📊 Informacje o AI:**")
+                st.write("• Model: GPT-3.5-turbo")
+                st.write("• Funkcja: Analiza tekstu naturalnego")
+                st.write("• Backup: Analiza regex")
         
         st.divider()
-          # Tylko 2 przykłady
+        
+        # Tylko 2 przykłady
         st.markdown("### 💡 Przykłady")
         examples = [
             "28 lat, kobieta, tempo 4:45",

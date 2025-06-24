@@ -25,6 +25,23 @@
 
 ---
 
+## 🛠️ Technologie i narzędzia
+
+Projekt wykorzystuje nowoczesny stack technologiczny:
+
+- **Python 3.9+** – główny język programowania
+- **Streamlit** – szybkie tworzenie aplikacji webowych
+- **PyCaret** – automatyzacja uczenia maszynowego
+- **OpenAI (GPT-4)** – ekstrakcja danych z tekstu naturalnego
+- **Plotly** – interaktywne wizualizacje
+- **Pandas** – analiza i przetwarzanie danych
+- **Scikit-learn** – klasyczne algorytmy ML
+- **pytest** – testy jednostkowe
+- **GitHub Actions** – CI/CD
+- **Black, flake8, mypy** – jakość i typowanie kodu
+
+---
+
 ## 🎯 Cel projektu
 
 Projekt został stworzony jako **showcase umiejętności** w obszarze:
@@ -36,25 +53,33 @@ Projekt został stworzony jako **showcase umiejętności** w obszarze:
 
 ## ✨ Kluczowe funkcjonalności
 
-### 🤖 Inteligentna analiza danych
-- Automatyczne rozpoznawanie danych przez **GPT-4**
-- Fallback na **regex** w przypadku problemów z API
-- Obsługa różnych formatów wejściowych
+### 🤖 Integracja z AI i fallback na regex
+- Automatyczne rozpoznawanie danych przez **OpenAI GPT-4** (analiza tekstu naturalnego)
+- Fallback na **regex** w przypadku braku klucza lub problemów z API
+- Obsługa różnych formatów wejściowych (np. "Mam 35 lat, jestem kobietą, tempo 5km: 5.10 min/km")
 
-### 📊 Zaawansowane wizualizacje
-- Interaktywne wykresy porównawcze (Plotly)
-- Analiza na tle grup demograficznych
-- Responsywny design
+### 🛡️ Obsługa błędów i user experience
+- Rozbudowane komunikaty dla użytkownika (błędy, ostrzeżenia, podpowiedzi)
+- Przykłady do szybkiego wklejenia
+- Możliwość wprowadzenia klucza OpenAI tymczasowo lub na stałe
+- Tryb podstawowy (regex) działa nawet bez AI
 
-### 🔧 Profesjonalne narzędzia
-- **Testy jednostkowe** (pytest)
-- **CI/CD** (GitHub Actions)
-- **Code quality** (Black, flake8)
-- **Type hints** i dokumentacja
+### 🎨 Własne style CSS i dbałość o UI
+- Nowoczesny, ciemny motyw i customowe style CSS
+- Responsywny, atrakcyjny interfejs (przyciski, metryki, animacje)
+- Dbałość o czytelność i dostępność
+
+### 📊 Analiza porównawcza z danymi historycznymi
+- Porównanie wyniku użytkownika do grupy wiekowej i płci
+- Interaktywne wykresy (Plotly) i fallback HTML
+- Statystyki: średnia, percentyl, pozycja w grupie
+- Analiza zależności tempo vs czas półmaratonu
+
+---
 
 ## 🚀 Demo na żywo
 
-**[👉 Wypróbuj aplikację na Streamlit Cloud](https://twoj-link-do-aplikacji.streamlit.app)**
+**[👉 Wypróbuj aplikację na Streamlit Cloud](https://kalkulator-dla-biegaczy.streamlit.app/)**
 
 ## 📊 Dane i model
 
@@ -69,46 +94,46 @@ Projekt został stworzony jako **showcase umiejętności** w obszarze:
 - **MAE**: 12.3 minuty
 - **Framework**: PyCaret
 
-## �️ Instalacja i uruchomienie
+## 🚦 Szybka instrukcja uruchomienia (dla początkujących)
 
-### Wymagania
-- Python 3.9+
-- Klucz API OpenAI
+**Jak uruchomić aplikację krok po kroku:**
 
-### Szybki start
-```bash
-# 1. Sklonuj repozytorium
-git clone https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy.git
-cd Kalkulator-dla-biegaczy
+1. **Zainstaluj Pythona**  
+   Pobierz i zainstaluj [Python 3.9 lub nowszy](https://www.python.org/downloads/).
 
-# 2. Zainstaluj zależności
-pip install -r requirements.txt
+2. **Pobierz projekt**  
+   Kliknij „Code” → „Download ZIP” lub użyj komendy:
+   ```bash
+   git clone https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy.git
+   ```
+   Następnie rozpakuj plik ZIP lub przejdź do folderu projektu:
+   ```bash
+   cd Kalkulator-dla-biegaczy
+   ```
 
-# 3. Skonfiguruj zmienne środowiskowe
-echo "OPENAI_API_KEY=your_api_key_here" > .env
+3. **Zainstaluj wymagane biblioteki**  
+   W terminalu wpisz:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# 4. Uruchom aplikację
-streamlit run app.py
-```
+4. **Dodaj klucz OpenAI (opcjonalnie, ale zalecane)**  
+   - Otwórz Notatnik i wpisz:
+     ```
+     OPENAI_API_KEY=sk-...tutaj_twój_klucz...
+     ```
+   - Zapisz plik jako `.env` w głównym folderze projektu.
 
-### Rozwój (development)
-```bash
-# Zainstaluj zależności deweloperskie
-pip install -r requirements.txt
-pip install -e ".[dev]"
+   Jeśli nie masz klucza, aplikacja zadziała w trybie podstawowym (bez AI).
 
-# Skonfiguruj pre-commit
-pre-commit install
-
-# Uruchom testy
-pytest
-
-# Sprawdź jakość kodu
-black .
-flake8 .
-```
+5. **Uruchom aplikację**  
+   W terminalu wpisz:
+   ```bash
    streamlit run app.py
    ```
+   Otworzy się przeglądarka z aplikacją.
+
+---
 
 ## 📁 Struktura projektu
 

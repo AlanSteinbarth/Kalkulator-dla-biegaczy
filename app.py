@@ -1,11 +1,21 @@
 # =============================================================================
-# KALKULATOR CZASU PÓŁMARATONU - WERSJA 2.0
+# KALKULATOR CZASU PÓŁMARATONU - WERSJA 2.1
 # Aplikacja do przewidywania czasu ukończenia półmaratonu na podstawie wieku,
 # płci i tempa na 5km, wykorzystująca model uczenia maszynowego.
 # 
 # Autor: Alan Steinbarth
 # Email: alan.steinbarth@gmail.com
 # GitHub: https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy
+# =============================================================================
+#
+# 🗂️ SPIS TREŚCI
+# 1. Importy i konfiguracja pakietów
+# 2. Konfiguracja strony i stylów
+# 3. Konfiguracja globalna i zmienne
+# 4. Funkcje pomocnicze (walidacja, model, dane, ekstrakcja)
+# 5. Obsługa klucza OpenAI API (status, sidebar)
+# 6. Interfejs użytkownika (główny widok)
+# 7. Footer
 # =============================================================================
 
 import streamlit as st
@@ -1451,7 +1461,7 @@ display_sidebar_content()
 st.markdown("---")
 st.markdown("""
 <div class='footer' style='text-align: center; background: linear-gradient(135deg, #262730 0%, #1a1a1a 100%); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border: 1px solid #4a4a4a;'>
-    <p style='color: #cbd5e0; font-size: 1.1em; margin-bottom: 0.5rem;'>🏃‍♂️ <strong>Kalkulator dla biegaczy v2.0</strong></p>
+    <p style='color: #cbd5e0; font-size: 1.1em; margin-bottom: 0.5rem;'>🏃‍♂️ <strong>Kalkulator dla biegaczy v2.1</strong></p>
     <p style='color: #90cdf4; margin-bottom: 0.5rem;'>Stworzony przez <a href='https://github.com/AlanSteinbarth' style='color: #667eea; text-decoration: none;'>Alan Steinbarth</a></p>
     <p style='color: #a0aec0; font-size: 0.9em;'>Model wytrenowany na danych z Maratonu Wrocławskiego 2023-2024</p>
 </div>

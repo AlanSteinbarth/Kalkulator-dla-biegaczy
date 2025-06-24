@@ -1,7 +1,7 @@
 # 🏃‍♂️ Kalkulator dla biegaczy v2.1
 
 <p align="center">
-  <img src="screenshots/cover.png" alt="Okładka projektu Kalkulator dla biegaczy" width="800" style="max-width:100%; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); background: transparent;" />
+  <img src="./screenshots/cover.png" alt="Okładka projektu Kalkulator dla biegaczy" width="800" />
 </p>
 
 [![Tests](https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy/actions/workflows/tests.yml/badge.svg)](https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy/actions/workflows/tests.yml)
@@ -295,7 +295,7 @@ Poniżej prezentowane są wybrane ekrany aplikacji wraz z krótkimi opisami:
 
 ### Ekran główny aplikacji
 
-![Ekran główny](screenshots/screen1.png)
+![Ekran główny](./screenshots/screen1.png)
 
 Widok startowy aplikacji: panel boczny z obsługą klucza OpenAI, przykłady, pole do wprowadzania danych użytkownika oraz przyciski do obliczania i czyszczenia. Na dole stopka z informacją o autorze i wersji.
 
@@ -303,7 +303,7 @@ Widok startowy aplikacji: panel boczny z obsługą klucza OpenAI, przykłady, po
 
 ### Wynik predykcji i analiza porównawcza
 
-![Wynik predykcji](screenshots/screen2.png)
+![Wynik predykcji](./screenshots/screen2.png)
 
 Po wprowadzeniu danych i kliknięciu "Oblicz przewidywany czas" pojawia się przewidywany czas półmaratonu, analiza porównawcza (średnia, percentyl, lepszy od ilu osób) oraz histogram rozkładu czasów w grupie porównawczej.
 
@@ -311,7 +311,7 @@ Po wprowadzeniu danych i kliknięciu "Oblicz przewidywany czas" pojawia się prz
 
 ### Szczegółowa analiza: wykres zależności tempo vs czas półmaratonu
 
-![Wykres zależności](screenshots/screen3.png)
+![Wykres zależności](./screenshots/screen3.png)
 
 Wizualizacja zależności między tempem na 5km a czasem półmaratonu (scatter plot). Czerwony punkt oznacza wynik użytkownika. Poniżej dodatkowe statystyki: dane użytkownika oraz statystyki grupy porównawczej.
 
@@ -319,7 +319,7 @@ Wizualizacja zależności między tempem na 5km a czasem półmaratonu (scatter 
 
 ### Przykładowe inne widoki
 
-![Widok 4](screenshots/screen4.png)
+![Widok 4](./screenshots/screen4.png)
 
 Przykład ekranu z pustym polem wejściowym i komunikatami o braku klucza OpenAI oraz trybie podstawowym.
 

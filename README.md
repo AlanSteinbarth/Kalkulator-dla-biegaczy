@@ -248,7 +248,7 @@ Zachęcam do współpracy!
 **Alan Steinbarth**
 - 🐙 GitHub: [@AlanSteinbarth](https://github.com/AlanSteinbarth)
 - 📧 Email: alan.steinbarth@gmail.com
-- 💼 LinkedIn: [Alan Steinbarth](https://linkedin.com/in/alan-steinbarth)
+- 💼 LinkedIn: [Alan Steinbarth](https://www.linkedin.com/in/alansteinbarth)
 
 ## 📄 Licencja
 

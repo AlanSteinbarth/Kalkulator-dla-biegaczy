@@ -27,6 +27,12 @@
 - ✅ Lepsze komunikaty błędów
 - ✅ Fallback mechanisms
 
+---
+
+## 📝 Dokumentacja
+- Wersja 2.1: dodano spis treści, docstringi, ujednolicono sekcje
+- Projekt gotowy do prezentacji i dalszego rozwoju
+
 ## 🚀 Status: APLIKACJA GOTOWA
 
 ### ✅ Składnia Python: POPRAWNA

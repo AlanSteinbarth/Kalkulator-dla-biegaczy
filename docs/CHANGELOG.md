@@ -5,6 +5,15 @@ Wszystkie ważne zmiany w tym projekcie będą dokumentowane w tym pliku.
 Format bazuje na [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 a projekt używa [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-06-24
+
+### 📝 Dokumentacja i finalizacja
+- Dodano spis treści do pliku `app.py` i `README.md`
+- Uzupełniono docstringi i sekcje w kodzie
+- Zwiększono numer wersji aplikacji do 2.1
+- Uporządkowano sekcje dokumentacyjne
+- Finalizacja projektu i przygotowanie do prezentacji
+
 ## [2.0.0] - 2025-06-22
 
 ### ✨ Dodane

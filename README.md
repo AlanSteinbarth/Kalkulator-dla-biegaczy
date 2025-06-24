@@ -1,4 +1,4 @@
-# 🏃‍♂️ Kalkulator dla biegaczy v2.0
+# 🏃‍♂️ Kalkulator dla biegaczy v2.1
 
 [![Tests](https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy/actions/workflows/tests.yml/badge.svg)](https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -6,6 +6,19 @@
 [![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white)](https://openai.com)
 
 > **Profesjonalna aplikacja webowa** do przewidywania czasu ukończenia półmaratonu przy użyciu **uczenia maszynowego** i **sztucznej inteligencji**.
+
+---
+## 📑 Spis treści
+1. [Cel projektu](#-cel-projektu)
+2. [Kluczowe funkcjonalności](#-kluczowe-funkcjonalności)
+3. [Demo na żywo](#-demo-na-żywo)
+4. [Dane i model](#-dane-i-model)
+5. [Instalacja i uruchomienie](#-instalacja-i-uruchomienie)
+6. [Obsługa klucza OpenAI](#obsługa-klucza-openai)
+7. [Changelog](#-changelog)
+8. [Licencja](#licencja)
+
+---
 
 ## 🎯 Cel projektu
 

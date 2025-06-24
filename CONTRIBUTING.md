@@ -2,6 +2,11 @@
 
 Dziękuję za zainteresowanie wkładem w projekt **Kalkulator dla biegaczy**! 
 
+## 📝 Styl dokumentacji
+- Każda funkcja powinna posiadać docstring w stylu Google lub NumPy
+- Plik główny (`app.py`) oraz README zawierają spis treści
+- Zmiany dokumentacyjne opisuj w commitach jako `docs:`
+
 ## 🚀 Szybki start dla developerów
 
 ### Setup środowiska

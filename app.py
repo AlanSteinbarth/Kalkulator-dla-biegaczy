@@ -1047,10 +1047,7 @@ def display_openai_status():
     else:
         # Brak klucza w .env
         st.warning("⚠️ **Brak klucza OpenAI**")
-        st.info("💡 **Wskazówki:**")
-        st.write("• Dodaj klucz do pliku `.env`")
-        st.write("• Lub wprowadź klucz tymczasowo poniżej")
-        st.write("• Bez klucza używany jest prostszy tryb analizy")
+        st.info("💡 Bez klucza używany jest podstawowy tryb analizy")
 
 
 def display_sidebar_content():
@@ -1063,11 +1060,9 @@ def display_sidebar_content():
         
         # Wyświetl szczegółowy status klucza
         display_openai_status()
-        
-        # Sekcja do wprowadzania klucza tymczasowego
+          # Sekcja do wprowadzania klucza tymczasowego
         if not OPENAI_AVAILABLE:
-            with st.expander("🔧 Wprowadź klucz tymczasowo", expanded=False):
-                st.markdown("**Wprowadź swój klucz OpenAI:**")
+             with st.expander("🔧 Wprowadź klucz tymczasowo", expanded=False):
                 user_api_key = st.text_input(
                     "Klucz API", 
                     type="password", 
@@ -1075,33 +1070,17 @@ def display_sidebar_content():
                     help="Klucz musi zaczynać się od 'sk-'"
                 )
                 
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("🔍 Sprawdź", use_container_width=True):
-                        if user_api_key:
-                            with st.spinner("Weryfikuję klucz..."):
-                                is_valid, message = verify_openai_key(user_api_key)
-                            
-                            if is_valid:
-                                st.success(f"✅ {message}")
-                            else:
-                                st.error(f"❌ {message}")
+                if st.button("✅ Aktywuj", use_container_width=True):
+                    if user_api_key:
+                        with st.spinner("Aktywuję AI..."):
+                            success, message = initialize_openai_client(user_api_key)
+                        if success:
+                            st.success(f"✅ {message}")
+                            st.rerun()
                         else:
-                            st.warning("⚠️ Wprowadź klucz API")
-                
-                with col2:
-                    if st.button("✅ Aktywuj", use_container_width=True):
-                        if user_api_key:
-                            with st.spinner("Aktywuję AI..."):
-                                success, message = initialize_openai_client(user_api_key)
-                            
-                            if success:
-                                st.success(f"✅ {message}")
-                                st.rerun()
-                            else:
-                                st.error(f"❌ {message}")
-                        else:
-                            st.warning("⚠️ Wprowadź klucz API")
+                            st.error(f"❌ {message}")
+                    else:
+                        st.warning("⚠️ Wprowadź klucz API")
                 
                 st.markdown("---")
                 st.markdown("**ℹ️ Informacje:**")

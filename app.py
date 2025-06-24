@@ -2,100 +2,61 @@
 # KALKULATOR CZASU PÓŁMARATONU - WERSJA 2.1
 # Aplikacja do przewidywania czasu ukończenia półmaratonu na podstawie wieku,
 # płci i tempa na 5km, wykorzystująca model uczenia maszynowego.
-# 
 # Autor: Alan Steinbarth
-# Email: alan.steinbarth@gmail.com
 # GitHub: https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy
 # =============================================================================
-#
-# 🗂️ SPIS TREŚCI
-# 1. Importy i konfiguracja pakietów
-# 2. Konfiguracja strony i stylów
-# 3. Konfiguracja globalna i zmienne
-# 4. Funkcje pomocnicze (walidacja, model, dane, ekstrakcja)
-# 5. Obsługa klucza OpenAI API (status, sidebar)
-# 6. Interfejs użytkownika (główny widok)
-# 7. Footer
-# =============================================================================
 
-import streamlit as st
-import pandas as pd
-import datetime
-import logging
-import json
-import re
 import os
+import re
+import json
+import logging
+import datetime
+import pandas as pd
+import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Próba importu opcjonalnych pakietów z fallback'ami
+# Importy opcjonalne (PyCaret, Plotly)
 try:
     from pycaret.regression import load_model as pycaret_load_model, predict_model as pycaret_predict_model
     PYCARET_AVAILABLE = True
-      # Bezpośrednie przypisanie oryginalnych funkcji PyCaret
     load_model = pycaret_load_model
     predict_model = pycaret_predict_model  # type: ignore[assignment]
-    
 except ImportError:
     PYCARET_AVAILABLE = False
-    
-    # Fallback funkcje gdy PyCaret nie jest dostępny - kompatybilne z oryginalnym API
-    def load_model(model_name, platform=None, authentication=None, verbose=True):  # noqa: ARG001
-        """Fallback funkcja gdy PyCaret nie jest dostępny."""
-        # Parametry zachowane dla kompatybilności z PyCaret API
-        _ = platform, authentication, verbose  # Jawne oznaczenie nieużywanych parametrów
+    def load_model(model_name, platform=None, authentication=None, verbose=True):
         st.error("❌ PyCaret nie jest zainstalowany. Zainstaluj go komendą: pip install pycaret")
-        logger.error("PyCaret nie jest dostępny - model %s nie może być załadowany", model_name)
+        logging.getLogger(__name__).error("PyCaret nie jest dostępny - model %s nie może być załadowany", model_name)
+        return None
+    def predict_model(estimator, data=None, round_digits=4, verbose=True):
+        st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
+        logging.getLogger(__name__).error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
         return None
 
-    def predict_model(estimator, data=None, round_digits=4, verbose=True):  # noqa  # type: ignore
-        """Fallback funkcja gdy PyCaret nie jest dostępny.""" 
-        # Parametry zachowane dla kompatybilności z PyCaret API
-        _ = estimator, data, round_digits, verbose  # Jawne oznaczenie nieużywanych parametrów  
-        st.error("❌ PyCaret nie jest zainstalowany. Nie można wykonać przewidywania.")
-        logger.error("PyCaret nie jest dostępny - przewidywanie niemożliwe")
-        return None
-    
-# Sprawdzenie dostępności opcjonalnych pakietów
 PLOTLY_AVAILABLE = False
 try:
     import plotly.express as px
     import plotly.graph_objects as go
     PLOTLY_AVAILABLE = True
-except ImportError:    
-    # Zaślepka dla px i figur plotly
+except ImportError:
     class PlotlyFigure:
-        def add_vline(self, *_args, **_kwargs):
-            return self
-        
-        def add_trace(self, *_args, **_kwargs):
-            return self
-        
-        def update_layout(self, *_args, **_kwargs):
-            return self
-            
-        def update_xaxes(self, *_args, **_kwargs):
-            return self
-            
-        def update_yaxes(self, *_args, **_kwargs):
-            return self
-            
+        def add_vline(self, *_args, **_kwargs): return self
+        def add_trace(self, *_args, **_kwargs): return self
+        def update_layout(self, *_args, **_kwargs): return self
+        def update_xaxes(self, *_args, **_kwargs): return self
+        def update_yaxes(self, *_args, **_kwargs): return self
     class PlotlyExpress:
         def __getattr__(self, _name):
-            def method(*_args, **_kwargs):
-                return PlotlyFigure()
+            def method(*_args, **_kwargs): return PlotlyFigure()
             return method
-    
     class PlotlyGraphObjects:
         def __getattr__(self, _name):
-            def method(*_args, **_kwargs):
-                return PlotlyFigure()
+            def method(*_args, **_kwargs): return PlotlyFigure()
             return method
-            
     px = PlotlyExpress()
     go = PlotlyGraphObjects()
 
-# Konfiguracja strony
+# Konfiguracja strony i stylów
 st.set_page_config(
     page_title="🏃‍♂️ Kalkulator dla biegaczy", 
     page_icon="🏃‍♂️",

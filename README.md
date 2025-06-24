@@ -140,7 +140,6 @@ Projekt został stworzony jako **showcase umiejętności** w obszarze:
 ```
 kalkulator-dla-biegaczy/
 ├── 📱 app.py                    # Główna aplikacja Streamlit
-├── ⚙️ config.py                 # Konfiguracja aplikacji  
 ├── 📊 df_cleaned.csv            # Dane treningowe
 ├── 🤖 huber_model_*.pkl         # Wytrenowany model ML
 ├── 📋 requirements.txt          # Zależności Python
@@ -342,11 +341,11 @@ Wizualizacja zależności między tempem na 5km a czasem półmaratonu (scatter 
 
 ---
 
-### Przykładowe inne widoki
+### Zaawansowana analiza: rozkład i statystyki grupy porównawczej
 
-![Widok 4](./screenshots/screen4.png)
+![screen5](./screenshots/screen5.png)
 
-Przykład ekranu z pustym polem wejściowym i komunikatami o braku klucza OpenAI oraz trybie podstawowym.
+Wizualizacja zależności między tempem na 5km a czasem półmaratonu dla całej grupy porównawczej. Wykres pokazuje rozkład wyników według płci, a Twój wynik jest wyróżniony na tle wszystkich biegaczy. Poniżej znajdują się szczegółowe statystyki Twoich danych oraz grupy porównawczej (liczba osób, średnie tempo, średni czas, najlepszy czas). To pozwala na głęboką analizę pozycji użytkownika względem innych uczestników.
 
 ---
 

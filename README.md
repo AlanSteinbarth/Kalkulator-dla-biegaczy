@@ -1,5 +1,9 @@
 # 🏃‍♂️ Kalkulator dla biegaczy v2.1
 
+<p align="center">
+  <img src="screenshots/cover.png" alt="Okładka projektu Kalkulator dla biegaczy" width="800" style="max-width:100%; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); background: transparent;" />
+</p>
+
 [![Tests](https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy/actions/workflows/tests.yml/badge.svg)](https://github.com/AlanSteinbarth/Kalkulator-dla-biegaczy/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
@@ -17,6 +21,7 @@
 6. [Obsługa klucza OpenAI](#obsługa-klucza-openai)
 7. [Changelog](#-changelog)
 8. [Licencja](#licencja)
+9. [Zrzuty ekranu](#-zrzuty-ekranu)
 
 ---
 
@@ -283,3 +288,41 @@ echo "OPENAI_API_KEY=sk-proj-twoj_klucz_tutaj" > .env
 - **Klucz wygasł**: Sprawdź na [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - **Problemy z rozliczeniami**: Sprawdź [platform.openai.com/usage](https://platform.openai.com/usage)
 - **Bez klucza**: Aplikacja działa w trybie podstawowym (analiza regex)
+
+## 🖼️ Zrzuty ekranu
+
+Poniżej prezentowane są wybrane ekrany aplikacji wraz z krótkimi opisami:
+
+### Ekran główny aplikacji
+
+![Ekran główny](screenshots/screen1.png)
+
+Widok startowy aplikacji: panel boczny z obsługą klucza OpenAI, przykłady, pole do wprowadzania danych użytkownika oraz przyciski do obliczania i czyszczenia. Na dole stopka z informacją o autorze i wersji.
+
+---
+
+### Wynik predykcji i analiza porównawcza
+
+![Wynik predykcji](screenshots/screen2.png)
+
+Po wprowadzeniu danych i kliknięciu "Oblicz przewidywany czas" pojawia się przewidywany czas półmaratonu, analiza porównawcza (średnia, percentyl, lepszy od ilu osób) oraz histogram rozkładu czasów w grupie porównawczej.
+
+---
+
+### Szczegółowa analiza: wykres zależności tempo vs czas półmaratonu
+
+![Wykres zależności](screenshots/screen3.png)
+
+Wizualizacja zależności między tempem na 5km a czasem półmaratonu (scatter plot). Czerwony punkt oznacza wynik użytkownika. Poniżej dodatkowe statystyki: dane użytkownika oraz statystyki grupy porównawczej.
+
+---
+
+### Przykładowe inne widoki
+
+![Widok 4](screenshots/screen4.png)
+
+Przykład ekranu z pustym polem wejściowym i komunikatami o braku klucza OpenAI oraz trybie podstawowym.
+
+---
+
+> Wszystkie zrzuty ekranu znajdują się w folderze [`screenshots/`](./screenshots/). Możesz dodać własne, aby pokazać inne funkcje lub przypadki użycia.

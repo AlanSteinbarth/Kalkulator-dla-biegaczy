@@ -97,6 +97,11 @@ class TestModelUtils:
         
         # Test z stringiem
         assert calculate_5km_time("6.0") == 1800.0
+        
+        # Test z formatem MM:SS
+        assert calculate_5km_time("4:30") == 1350.0  # 4.5 min/km * 5km * 60s = 1350s
+        assert calculate_5km_time("5:00") == 1500.0  # 5.0 min/km * 5km * 60s = 1500s
+        assert calculate_5km_time("4:45") == 1425.0  # 4.75 min/km * 5km * 60s = 1425s
 
 
 # Uruchomienie testów

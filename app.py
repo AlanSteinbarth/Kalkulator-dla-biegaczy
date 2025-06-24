@@ -83,37 +83,70 @@ st.set_page_config(
 # Wymuszenie ciemnego motywu
 st.markdown("""
 <style>
-    /* Główne tło aplikacji */
+    /* GŁÓWNE TŁO APLIKACJI */
     .stApp {
-        background-color: #0e1117;
-        color: #fafafa;
-    }    /* Tło sidebara - force override */
-    .css-1d391kg, .st-emotion-cache-bu46p3, .st-emotion-cache-1yiq2ps > div:first-child {
         background-color: #0e1117 !important;
         color: #fafafa !important;
     }
     
-    /* Specyficzne selektory dla sidebara */
-    section[data-testid="stSidebar"] {
+    /* SUPER AGRESYWNE WYMUSZENIE CIEMNEGO MOTYWU DLA SIDEBARA */
+    
+    /* Wszystkie możliwe selektory dla sidebara */
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"] *,
+    section[data-testid="stSidebar"] > *,
+    section[data-testid="stSidebar"] div,
+    section[data-testid="stSidebar"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stSidebarContent"],
+    section[data-testid="stSidebar"] .st-emotion-cache-jx6q2s,
+    section[data-testid="stSidebar"] .st-emotion-cache-1lqf7hx,
+    section[data-testid="stSidebar"] .st-emotion-cache-1yiq2ps,
+    section[data-testid="stSidebar"] .st-emotion-cache-bu46p3,
+    section[data-testid="stSidebar"] .css-1d391kg,
+    .st-emotion-cache-jx6q2s,
+    .st-emotion-cache-1lqf7hx,
+    .st-emotion-cache-1yiq2ps,
+    .st-emotion-cache-bu46p3,
+    .css-1d391kg {
         background-color: #0e1117 !important;
+        background: #0e1117 !important;
+        color: #fafafa !important;
     }
     
-    section[data-testid="stSidebar"] > div {
+    /* Dodatkowe wymuszenie dla wszystkich elementów w sidebarze */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .stMarkdown *,
+    section[data-testid="stSidebar"] .stButton,
+    section[data-testid="stSidebar"] .stExpander,
+    section[data-testid="stSidebar"] .stMetric,
+    section[data-testid="stSidebar"] .stAlert,
+    section[data-testid="stSidebar"] .stTextInput {
         background-color: #0e1117 !important;
+        background: #0e1117 !important;
     }
     
-    /* Sidebar content */
-    .st-emotion-cache-jx6q2s {
+    /* Globalne wymuszenie dla wszystkich divów w sidebarze */
+    section[data-testid="stSidebar"] div[class*="st-emotion-cache"],
+    section[data-testid="stSidebar"] div[class*="css-"] {
         background-color: #0e1117 !important;
+        background: #0e1117 !important;
     }
     
-    /* Wszystkie elementy sidebara - force dark */
-    section[data-testid="stSidebar"], 
-    section[data-testid="stSidebar"] > *, 
-    section[data-testid="stSidebar"] div, 
-    section[data-testid="stSidebar"] div[data-testid="stSidebarContent"] {
+    /* Dodatkowe selektory dla problematycznych elementów */
+    .st-emotion-cache-1lqf7hx {
         background-color: #0e1117 !important;
         color: #fafafa !important;
+    }
+    
+    /* Wszystkie divs w sidebarze */
+    section[data-testid="stSidebar"] div[class*="st-emotion-cache"] {
+        background-color: #0e1117 !important;
+        color: #fafafa !important;
+    }
+    
+    /* Specjalne selectory dla dynamicznych klas */
+    div[class*="st-emotion-cache"]:has(section[data-testid="stSidebar"]) {
+        background-color: #0e1117 !important;
     }
     
     /* Tło głównej zawartości */
@@ -168,14 +201,32 @@ st.markdown("""
     .stButton > button:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-    }
-      /* Stylowanie przycisków w sidebarze */
-    .css-1d391kg .stButton > button {
+    }    /* Stylowanie przycisków w sidebarze */
+    section[data-testid="stSidebar"] .stButton > button {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
         width: 100% !important;
         margin-bottom: 8px !important;
         color: white !important;
         border: none !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3) !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4) !important;
+    }
+    
+    /* Dodatkowe selektory dla przycisków w sidebarze */
+    .css-1d391kg .stButton > button,
+    .st-emotion-cache-1d391kg .stButton > button {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3) !important;
     }
     
     /* Stylowanie alertów w sidebarze */
@@ -225,9 +276,84 @@ st.markdown("""
         color: #ffffff !important;
         font-weight: bold !important;
     }
-    
-    section[data-testid="stSidebar"] .stMetric [data-testid="stMetricLabel"] {
+      section[data-testid="stSidebar"] .stMetric [data-testid="stMetricLabel"] {
         color: #cbd5e0 !important;
+    }
+    
+    /* Dodatkowe naprawy dla czarnego tła w sidebarze */
+    section[data-testid="stSidebar"] [data-testid="stExpanderDetails"] {
+        background-color: #0e1117 !important;
+        color: #fafafa !important;
+    }
+    
+    /* Naprawy dla paragrafów w sidebarze */
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] div[class*="st-emotion-cache"] p {
+        background-color: transparent !important;
+        color: #fafafa !important;
+    }
+    
+    /* Success i warning messages w sidebarze */
+    section[data-testid="stSidebar"] .stSuccess {
+        background-color: rgba(17, 153, 142, 0.2) !important;
+        color: #fafafa !important;
+        border: 1px solid #11998e !important;
+    }
+    
+    section[data-testid="stSidebar"] .stWarning {
+        background-color: rgba(251, 146, 60, 0.2) !important;
+        color: #fafafa !important;
+        border: 1px solid #fb923c !important;
+    }
+    
+    section[data-testid="stSidebar"] .stInfo {
+        background-color: rgba(59, 130, 246, 0.2) !important;
+        color: #fafafa !important;
+        border: 1px solid #3b82f6 !important;
+    }
+    
+    /* Naprawy dla wszystkich elementów w sidebarze - ostatnia deska ratunku */
+    section[data-testid="stSidebar"] * {
+        background-color: inherit !important;
+    }
+    
+    /* Specjalne naprawy dla konkretnych klas które widzimy w CSS */
+    .st-emotion-cache-qbgoph {
+        background-color: transparent !important;
+    }
+      section[data-testid="stSidebar"] .st-emotion-cache-qbgoph {
+        background-color: transparent !important;
+        color: #fafafa !important;
+    }
+    
+    /* ULTIMATE FIX - nadpisanie wszystkich możliwych klas CSS dla sidebara */
+    section[data-testid="stSidebar"] [class*="st-emotion-cache"],
+    section[data-testid="stSidebar"] [class*="css-"],
+    section[data-testid="stSidebar"] div,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+    
+    /* Globalne nadpisanie tylko dla sidebara */
+    section[data-testid="stSidebar"] {
+        background: #0e1117 !important;
+    }
+    
+    section[data-testid="stSidebar"] > * {
+        background-color: #0e1117 !important;
+    }
+    
+    /* Używamy ważności !important z bardzo wysoką specyficznością */
+    html body div div section[data-testid="stSidebar"] * {
+        background-color: inherit !important;
+        background: inherit !important;
+    }
+    
+    html body div div section[data-testid="stSidebar"] {
+        background-color: #0e1117 !important;
+        background: #0e1117 !important;
     }
     
     /* Stylowanie success box */
@@ -317,11 +443,102 @@ st.markdown("""
         50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.8); }
         100% { box-shadow: 0 0 5px rgba(102, 126, 234, 0.5); }
     }
-    
-    .stButton > button:focus {
+      .stButton > button:focus {
         animation: glow 2s infinite !important;
     }
+    
+    /* =================================================================== */
+    /* ULTIMATE SIDEBAR BACKGROUND FIX - NAJWYŻSZY PRIORYTET */
+    /* =================================================================== */
+    
+    /* Super specyficzne selektory z najwyższą możliwą specyficznością */
+    html body div#root div.stApp div.st-emotion-cache-13k62yr div.st-emotion-cache-1yiq2ps section[data-testid="stSidebar"],
+    html body div#root div.stApp div.st-emotion-cache-13k62yr div.st-emotion-cache-1yiq2ps section[data-testid="stSidebar"] *,
+    html body div#root div.stApp div.st-emotion-cache-13k62yr div.st-emotion-cache-1yiq2ps section[data-testid="stSidebar"] div,
+    html body div.stApp section[data-testid="stSidebar"],
+    html body div.stApp section[data-testid="stSidebar"] *,
+    html body div.stApp section[data-testid="stSidebar"] div {
+        background-color: #0e1117 !important;
+        background: #0e1117 !important;
+    }
+    
+    /* Wymuszenie na poziomie najbardziej ogólnym */
+    * {
+        --sidebar-background-color: #0e1117 !important;
+    }
+    
+    /* Specjalne wymuszenie dla znanych klas */
+    .st-emotion-cache-1lqf7hx,
+    .st-emotion-cache-jx6q2s,
+    .st-emotion-cache-1yiq2ps,
+    .st-emotion-cache-qbgoph {
+        background-color: #0e1117 !important;
+        background: #0e1117 !important;
+    }
+    
+    /* Absolutnie wszystko w sidebarze */
+    section[data-testid="stSidebar"] {
+        background-color: #0e1117 !important;
+        background: #0e1117 !important;
+    }
+    
+    section[data-testid="stSidebar"] > * {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+    
+    /* Jeszcze bardziej agresywne wymuszenie */
+    body section[data-testid="stSidebar"] *,
+    body section[data-testid="stSidebar"] div,
+    body section[data-testid="stSidebar"] p,
+    body section[data-testid="stSidebar"] span,
+    body section[data-testid="stSidebar"] [class*="st-emotion-cache"],
+    body section[data-testid="stSidebar"] [class*="css-"] {
+        background-color: inherit !important;
+        background: inherit !important;
+    }
 </style>
+""", unsafe_allow_html=True)
+
+# Dodatkowy JavaScript do wymuszenia ciemnego motywu
+st.markdown("""
+<script>
+    // JavaScript do wymuszenia ciemnego tła w sidebarze
+    function forceDarkSidebar() {
+        // Znajdź sidebar
+        const sidebar = document.querySelector('section[data-testid="stSidebar"]');
+        if (sidebar) {
+            // Wymuś ciemne tło na sidebarze i wszystkich jego dzieciach
+            sidebar.style.backgroundColor = '#0e1117';
+            sidebar.style.background = '#0e1117';
+            
+            // Znajdź wszystkie elementy wewnątrz sidebara
+            const sidebarElements = sidebar.querySelectorAll('*');
+            sidebarElements.forEach(element => {
+                // Nie zmieniaj tła dla konkretnych elementów zawartości, tylko kontenerów
+                const computedStyle = window.getComputedStyle(element);
+                if (computedStyle.backgroundColor === 'rgb(38, 39, 48)' || 
+                    computedStyle.backgroundColor === 'rgb(33, 37, 41)' ||
+                    computedStyle.backgroundColor.includes('262730')) {
+                    element.style.backgroundColor = '#0e1117';
+                    element.style.background = '#0e1117';
+                }
+            });
+        }
+    }
+    
+    // Uruchom natychmiast
+    forceDarkSidebar();
+    
+    // Uruchom ponownie po krótkim opóźnieniu (gdy elementy się załadują)
+    setTimeout(forceDarkSidebar, 100);
+    setTimeout(forceDarkSidebar, 500);
+    setTimeout(forceDarkSidebar, 1000);
+    
+    // Uruchom gdy DOM się zmieni
+    const observer = new MutationObserver(forceDarkSidebar);
+    observer.observe(document.body, { childList: true, subtree: true });
+</script>
 """, unsafe_allow_html=True)
 
 # Konfiguracja loggera
@@ -405,7 +622,8 @@ def initialize_openai_client(api_key: str | None = None) -> tuple[bool, str]:
     Returns:
         tuple: (czy_inicjalizacja_udana, wiadomosc_o_statusie)
     """
-    global client, OPENAI_AVAILABLE
+    # Global jest potrzebne do modyfikacji stanu klienta OpenAI w całej aplikacji
+    global client, OPENAI_AVAILABLE  # pylint: disable=global-statement
     
     # Użyj podanego klucza lub z .env
     key_to_use = api_key or config.OPENAI_API_KEY
@@ -537,14 +755,22 @@ def validate_user_data(data):
 def calculate_5km_time(tempo):
     """
     Przelicza tempo biegu (min/km) na całkowity czas w sekundach dla dystansu 5km.
+    Obsługuje formaty: 5.0, "5.0", "4:30"
     
     Args:
-        tempo (float): Tempo biegu w minutach na kilometr
+        tempo: Tempo biegu w minutach na kilometr (float, str lub format MM:SS)
         
     Returns:
         float: Całkowity czas w sekundach
     """
-    return float(tempo) * 5 * 60
+    if isinstance(tempo, str) and ':' in tempo:
+        # Konwersja formatu MM:SS na minuty dziesiętne
+        minutes, seconds = tempo.split(':')
+        tempo_decimal = float(minutes) + float(seconds) / 60
+    else:
+        tempo_decimal = float(tempo)
+    
+    return tempo_decimal * 5 * 60
 
 
 @st.cache_resource(ttl=3600)  # Cache na 1 godzinę
@@ -590,21 +816,23 @@ def extract_data_with_regex(input_text):
     Fallback function: ekstraktuje dane przy użyciu wyrażeń regularnych.    
     Args:
         input_text: Tekst wprowadzony przez użytkownika
-        
-    Returns:
+          Returns:
         dict lub None: Wyekstraktowane dane lub None w przypadku błędu
     """
     try:
         # Rozszerzone wyrażenia regularne
         age_match = re.search(r'(\d{1,3})\s*(?:lat|l\b|roku|years?)', input_text.lower())
-        gender_match = re.search(r'(?:jestem\s+)?(kobieta|mężczyzna|k\b|m\b|facet|chłop)', input_text.lower())
+        gender_match = re.search(r'(?:jestem\s+)?(kobiet[ąaę]|kobieta|mężczyzn[ąaę]|mężczyzna|k\b|m\b|facet|chłop)', input_text.lower())
         
         # Szukanie tempa w różnych formatach
         pace_patterns = [
             r'(\d{1,2}[.,]\d{1,2})\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)',
-            r'(\d{1,2}:\d{2})\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)',
+            r'(\d{1,2}:\d{2})\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)?',
             r'tempo[:\s]*(\d{1,2}[.,]\d{1,2})',
-            r'biegam[^0-9]*(\d{1,2}[.,]\d{1,2})'
+            r'tempo[:\s]*(\d{1,2}:\d{2})',
+            r'biegam[^0-9]*(\d{1,2}[.,]\d{1,2})',
+            r'(\d{1,2}:\d{2})(?!\d)',  # Format MM:SS bez wymagania słów kluczowych
+            r'(\d{1,2}[.,]\d{1,2})(?!\d)'  # Format dziesiętny bez wymagania słów kluczowych
         ]
         
         pace_match = None
@@ -621,7 +849,17 @@ def extract_data_with_regex(input_text):
         if not gender_match:
             return None
         gender_text = gender_match.group(1).lower()
-        gender = 'K' if gender_text in ['kobieta', 'k'] else 'M'
+        # Bardziej rozbudowana logika rozpoznawania płci - sprawdzamy najpierw dłuższe wzorce
+        if any(word in gender_text for word in ['kobiet']):
+            gender = 'K'
+        elif any(word in gender_text for word in ['mężczyzn', 'facet', 'chłop']):
+            gender = 'M'
+        elif gender_text.strip() == 'k':
+            gender = 'K'
+        elif gender_text.strip() == 'm':
+            gender = 'M'
+        else:
+            gender = 'M'  # domyślnie
         
         if not pace_match:
             return None
@@ -788,7 +1026,8 @@ def initialize_session_state():
 
 def display_sidebar_content():
     """Wyświetla zawartość sidebara."""
-    global client, OPENAI_AVAILABLE
+    # Global jest potrzebne do modyfikacji stanu klienta OpenAI w sidebarze
+    global client, OPENAI_AVAILABLE  # pylint: disable=global-statement
     
     with st.sidebar:
         # Sekcja zarządzania kluczem OpenAI
@@ -1173,7 +1412,7 @@ if not oblicz or not st.session_state.get('last_result_success', False):
         if config.OPENAI_API_KEY:
             st.warning("⚠️ **Uwaga:** Błąd inicjalizacji OpenAI. Sprawdź klucz API w sidebarze.")
         else:
-            st.warning("⚠️ **Uwaga:** Brak klucza OpenAI API. Dodaj klucz w sidebarze lub pliku .env dla funkcji AI.")
+            st.warning("⚠️ **Uwaga:** funkcje AI są niedostępne. Dodaj klucz w sidebarze lub pliku .env dla pełnej funkcjonalności.")
     st.info("📝 **Przykład:** 'Mam 28 lat, jestem kobietą i biegam 5 km w tempie 4.45 min/km'")
 
 # Footer

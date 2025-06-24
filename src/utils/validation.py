@@ -124,14 +124,17 @@ def extract_data_with_regex(user_input: str) -> Optional[dict]:
     try:
         # Rozszerzone wyrażenia regularne
         age_match = re.search(r'(\d{1,3})\s*(?:lat|l\b|roku|years?)', user_input.lower())
-        gender_match = re.search(r'(?:jestem\s+)?(kobieta|mężczyzna|k\b|m\b|facet|chłop)', user_input.lower())
+        gender_match = re.search(r'(?:jestem\s+)?(kobiet[ąaę]|kobieta|mężczyzn[ąaę]|mężczyzna|k\b|m\b|facet|chłop)', user_input.lower())
         
         # Szukanie tempa w różnych formatach
         pace_patterns = [
             r'(\d{1,2}[.,]\d{1,2})\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)',
-            r'(\d{1,2}:\d{2})\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)',
+            r'(\d{1,2}:\d{2})\s*(?:min(?:ut)?(?:y|ę)?(?:\s*(?:na|\/|\s+)\s*km)?)?',
             r'tempo[:\s]*(\d{1,2}[.,]\d{1,2})',
-            r'biegam[^0-9]*(\d{1,2}[.,]\d{1,2})'
+            r'tempo[:\s]*(\d{1,2}:\d{2})',
+            r'biegam[^0-9]*(\d{1,2}[.,]\d{1,2})',
+            r'(\d{1,2}:\d{2})(?!\d)',  # Format MM:SS bez wymagania słów kluczowych
+            r'(\d{1,2}[.,]\d{1,2})(?!\d)'  # Format dziesiętny bez wymagania słów kluczowych
         ]
         
         pace_match = None
@@ -148,7 +151,17 @@ def extract_data_with_regex(user_input: str) -> Optional[dict]:
         if not gender_match:
             return None
         gender_text = gender_match.group(1).lower()
-        gender = 'K' if gender_text in ['kobieta', 'k'] else 'M'
+        # Bardziej rozbudowana logika rozpoznawania płci - sprawdzamy najpierw dłuższe wzorce
+        if any(word in gender_text for word in ['kobiet']):
+            gender = 'K'
+        elif any(word in gender_text for word in ['mężczyzn', 'facet', 'chłop']):
+            gender = 'M'
+        elif gender_text.strip() == 'k':
+            gender = 'K'
+        elif gender_text.strip() == 'm':
+            gender = 'M'
+        else:
+            gender = 'M'  # domyślnie
         
         if not pace_match:
             return None

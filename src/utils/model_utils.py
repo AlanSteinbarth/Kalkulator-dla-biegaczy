@@ -30,9 +30,10 @@ logger = logging.getLogger(__name__)
 def calculate_5km_time(tempo: Union[float, str]) -> float:
     """
     Przelicza tempo biegu (min/km) na całkowity czas w sekundach dla dystansu 5km.
+    Obsługuje formaty: 5.0, "5.0", "4:30"
     
     Args:
-        tempo: Tempo biegu w minutach na kilometr
+        tempo: Tempo biegu w minutach na kilometr (float, str lub format MM:SS)
         
     Returns:
         float: Całkowity czas w sekundach
@@ -40,8 +41,17 @@ def calculate_5km_time(tempo: Union[float, str]) -> float:
     Example:
         >>> calculate_5km_time(5.0)
         1500.0
+        >>> calculate_5km_time("4:30")
+        1350.0
     """
-    return float(tempo) * 5 * 60
+    if isinstance(tempo, str) and ':' in tempo:
+        # Konwersja formatu MM:SS na minuty dziesiętne
+        minutes, seconds = tempo.split(':')
+        tempo_decimal = float(minutes) + float(seconds) / 60
+    else:
+        tempo_decimal = float(tempo)
+    
+    return tempo_decimal * 5 * 60
 
 
 @st.cache_resource(ttl=config.MODEL_CACHE_TTL)

@@ -15,7 +15,7 @@ gatherUsageStats = false
 # Ciemny motyw (dark mode)
 primaryColor = "#667eea"              # Niebieski kolor główny dla przycisków/linków
 backgroundColor = "#0e1117"           # Czarne tło główne
-secondaryBackgroundColor = "#262730"  # Ciemnoszare tło dla sidebara i elementów
+secondaryBackgroundColor = "#0e1117"  # To samo tło dla sidebara - ujednolicenie
 textColor = "#fafafa"                 # Biały tekst
 font = "sans serif"
 

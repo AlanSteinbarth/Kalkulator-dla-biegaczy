@@ -103,6 +103,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Wymuszenie poprawnego tytułu karty z emoji w Chrome i innych przeglądarkach
+st.markdown("""
+<script>
+document.title = "🏃‍♂️ Kalkulator dla biegaczy 🏃‍♀️";
+</script>
+""", unsafe_allow_html=True)
+
+# Poprawka tytułu karty (zakładki) w przeglądarce Chrome
+st.markdown(
+    """
+    <script>
+        document.title = "🏃‍♂️ Kalkulator dla biegaczy 🏃‍♀️";
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
 # Wymuszenie ciemnego motywu
 st.markdown("""
 <style>
@@ -1067,19 +1084,19 @@ def display_sidebar_content():
     
     with st.sidebar:
         st.markdown("### 🔑 Status OpenAI API")
-        
+
         # Wyświetl szczegółowy status klucza
         display_openai_status()
-          # Sekcja do wprowadzania klucza tymczasowego
+        # Sekcja do wprowadzania klucza tymczasowego
         if not OPENAI_AVAILABLE:
-             with st.expander("🔧 Wprowadź klucz tymczasowo", expanded=False):
+            with st.expander("🔧 Wprowadź klucz tymczasowo", expanded=False):
                 user_api_key = st.text_input(
                     "Klucz API", 
                     type="password", 
                     placeholder="sk-proj-...",
                     help="Klucz musi zaczynać się od 'sk-'"
                 )
-                
+
                 if st.button("✅ Aktywuj", use_container_width=True):
                     if user_api_key:
                         with st.spinner("Aktywuję AI..."):
@@ -1091,17 +1108,17 @@ def display_sidebar_content():
                             st.error(f"❌ {message}")
                     else:
                         st.warning("⚠️ Wprowadź klucz API")
-                
+
                 st.markdown("---")
                 st.markdown("**ℹ️ Informacje:**")
                 st.write("• Klucz nie jest zapisywany na stałe")
                 st.write("• Będzie aktywny tylko w tej sesji")
                 st.write("• Aby zapisać na stałe, dodaj do `.env`")
-                
+
                 # Jeśli jest klucz w .env, pokaż opcję testowania
                 if config.OPENAI_API_KEY and config.OPENAI_API_KEY.strip():
                     st.markdown("---")
-                    st.markdown("**� Klucz z pliku .env:**")
+                    st.markdown("**🔑 Klucz z pliku .env:**")
                     if st.button("🧪 Testuj klucz z .env", use_container_width=True):
                         with st.spinner("Testuję klucz z .env..."):
                             success, message = initialize_openai_client()
@@ -1119,8 +1136,8 @@ def display_sidebar_content():
                         # Sprawdź aktualny klucz
                         current_key = config.OPENAI_API_KEY if client else None
                         if current_key:
-                            is_valid, status_message = verify_openai_key(current_key)
-                            if is_valid:
+                            key_is_valid, status_message = verify_openai_key(current_key)
+                            if key_is_valid:
                                 st.success(f"✅ {status_message}")
                             else:
                                 st.error(f"❌ {status_message}")
@@ -1130,28 +1147,28 @@ def display_sidebar_content():
                                 st.rerun()
                         else:
                             st.warning("⚠️ Nie można zweryfikować klucza")
-                
+
                 if st.button("🔴 Wyłącz AI", use_container_width=True):
                     client = None
                     OPENAI_AVAILABLE = False
                     st.info("🔌 OpenAI API zostało wyłączone")
                     st.rerun()
-                
+
                 st.markdown("---")
                 st.markdown("**📊 Informacje o AI:**")
                 st.write("• Model: GPT-3.5-turbo")
                 st.write("• Funkcja: Analiza tekstu naturalnego")
                 st.write("• Backup: Analiza regex")
-        
+
         st.divider()
-        
+
         # Tylko 2 przykłady
         st.markdown("### 💡 Przykłady")
         examples = [
             "28 lat, kobieta, tempo 4:45",
             "35 lat, mężczyzna, tempo 5:20"
         ]
-        
+
         for i, example in enumerate(examples, 1):
             if st.button(f"Przykład {i}", key=f"example_{i}", use_container_width=True):
                 st.session_state['user_input'] = example
@@ -1269,9 +1286,9 @@ if oblicz:
             st.error("❌ Nie udało się przetworzyć danych. Upewnij się, że podałeś wszystkie wymagane informacje.")
         else:
             # Walidacja danych
-            is_valid, errors_list = validate_user_data(user_data)
-            
-            if not is_valid:
+            valid_data, errors_list = validate_user_data(user_data)
+
+            if not valid_data:
                 st.warning("⚠️ Problemy z danymi:")
                 for error in errors_list:
                     st.write(f"• {error}")
@@ -1370,7 +1387,7 @@ if oblicz:
                                 
                                 st.plotly_chart(fig, use_container_width=True)
                                 
-                            except Exception as e:
+                            except (ValueError, TypeError, KeyError, ImportError) as e:
                                 logger.error("Błąd tworzenia wykresu: %s", str(e))
                                 st.markdown(create_fallback_chart(
                                     "Rozkład czasów w Twojej grupie",
@@ -1418,8 +1435,8 @@ if oblicz:
                                 
                                 st.plotly_chart(fig, use_container_width=True)
                                 
-                            except Exception as e:
-                                logger.error("Błąd tworzenia scatter plot: %s", str(e))
+                            except (ValueError, TypeError, KeyError, ImportError) as e:
+                                logger.error("Błąd tworzenia wykresu: %s", str(e))
                                 st.markdown(create_fallback_chart(
                                     "Zależność tempo vs czas półmaratonu",
                                     "Wykres przedstawiający korelację między tempem na 5km a czasem półmaratonu"
